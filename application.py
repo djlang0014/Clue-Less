@@ -1,9 +1,9 @@
 from flask import Flask
 
-app = Flask(__name__)
+application = Flask(__name__)
 
 
-@app.route('/')
+@application.route('/')
 def test():
     return "<h>Clue-Less Test page.<br>Developed by Creative Engineers.</h>"
 
@@ -13,5 +13,5 @@ def test():
 if __name__ == "__main__":
     # Setting debug to True enables debug output. This line should be
     # removed before deploying a production app.
-    app.debug = True
-    app.run()
+    application.debug = True
+    application.run()
