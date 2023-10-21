@@ -399,3 +399,4 @@ FodyWeavers.xsd
 
 #virtual environment folder
 env
+venv
