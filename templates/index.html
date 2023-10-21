@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Tutorial on Flask: A Web socket example</title>
+<script src="https://code.jquery.com/jquery-3.3.1.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.0/socket.io.js"></script>
+<script type="text/javascript">
+    var socket = io.connect();
+
+    $(document).ready(function() {
+    // sending a connect request to the server.
+        
+        socket.emit('after connect', function(connectMsg) {
+            $('#log').append('<br>' + $('<div/>').text('What is the intention of the code: ' + connectMsg.data).html());
+        });
+
+    });
+
+    $(document).ready(function(){
+        $('#form').submit(function(){
+            socket.emit('message', $('#Input').val());
+            //socket.emit('message', "Input");
+            //$('#Input').val('');
+            return false;
+
+        });
+    });
+</script>
+</head>
+</head>
+<body>
+<h1>Example on SocketIO : EduCBA</h1>
+<h2>Message Received:</h2>
+<div id="log"></div>
+<form>
+    Message:
+    <input type="text" id="Input">
+    <br>
+    <input type="submit">
+</form>
+</body>
+</html>
