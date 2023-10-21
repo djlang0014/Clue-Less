@@ -69,10 +69,12 @@ decorator @ file:///tmp/build/80754af9/decorator_1632776554403/work
 defusedxml @ file:///tmp/build/80754af9/defusedxml_1615228127516/work
 diff-match-patch @ file:///Users/ktietz/demo/mc3/conda-bld/diff-match-patch_1630511840874/work
 distributed @ file:///tmp/build/80754af9/distributed_1635968203122/work
+dnspython==2.4.2
 docutils @ file:///tmp/build/80754af9/docutils_1620827984873/work
 entrypoints==0.3
 et-xmlfile==1.1.0
 etuples==0.3.3
+eventlet==0.33.3
 fastcache==1.1.0
 fastprogress==1.0.0
 ffmpeg==1.4
@@ -89,6 +91,7 @@ future==0.18.2
 gast==0.5.3
 geopandas==0.9.0
 gevent @ file:///tmp/build/80754af9/gevent_1628273677693/work
+gevent-websocket==0.10.1
 glob2 @ file:///home/linux1/recipes/ci/glob2_1610991677669/work
 gmpy2==2.0.8
 google-auth==2.6.0
@@ -97,6 +100,7 @@ google-pasta==0.2.0
 graphviz @ file:///tmp/build/80754af9/python-graphviz_1612303637553/work
 greenlet @ file:///tmp/build/80754af9/greenlet_1628887725296/work
 grpcio==1.44.0
+gunicorn==21.2.0
 h11==0.12.0
 h5py==2.10.0
 HeapDict @ file:///Users/ktietz/demo/mc3/conda-bld/heapdict_1630598515714/work
