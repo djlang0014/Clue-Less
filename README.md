@@ -4,6 +4,7 @@ Repository for the Clue-Less game, a lite version of the traditional Clue game. 
 ## How-To
 (Disclaimer: these steps are what I have taken on my Linux/Ubuntu computer.  Steps may differ for Mac or Windows)
 1. It is assumed you have already cloned the Clue-Less GitHub repo and have a terminal open in the top folder of the repo folder structure.  It is also highly recommended to run `git pull` before editing the project.
+
 2. It is recommended to set up a virtual environment.  You can do so by running
 ```
 python -m venv ./<venv name>
@@ -22,11 +23,13 @@ If it is necessary to download new dependencies during development, you can upda
 pip freeze > requirements.txt
 ```
 Please only run the above command if you are in a virtual environment created exclusively for this project.  Otherwise, add the dependency manually to the `requirements.txt` file.
+
 4. Run the server locally by calling
 ```
 python application.py
 ```
 After starting the server, the console will include a link to the front-end, typically at `http://127.0.0.1:8000`.  There you can see and test the project.
+
 5. Deploy to GitHub.  Once you have made your updates, run the following:
 ```
 git add .
