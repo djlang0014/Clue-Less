@@ -29,55 +29,60 @@ def message_recieved(data):
 ## Server to Client:
 # Send message to indicate current game state (in case of refresh) - character positions, player’s cards, and all players’ names
 def sendGameState():
-    pass
+    socketio.emit('game_state', {'text':''})
 
 # Send message to indicate beginning of player’s turn
 def sendTurnStart():
-    pass
+    socketio.emit('begin_turn', {'text':''})
 
 # Send message to indicate the new space a character has moved to (character, new space name)
 def broadcastMovementUpdate():
-    pass
+    socketio.emit('bc_movement_update', {'text':''})
 
 # Send message to indicate what suggestion a player has made (character, weapon, room name)
 def broadcastSuggestion():
-    pass
+    socketio.emit('bc_suggestion', {'text':''})
 
 # Send message to the player who made a suggestion indicating what cards other players have chosen to show them that proves the suggestion false 
 def sendSuggestionDisproof():
-    pass
+    socketio.emit('suggestion_disproof', {'text':''})
 
 # Send message to indicate what accusation a player has made (character, weapon, room name) 4
 def broadcastAccusation():
-    pass
+    socketio.emit('bc_accusation', {'text':''})
 
 # Send message to an accusing player to indicate the true character, weapon, and room name 
 def sendCaseFile():
-    pass
+    socketio.emit('case_file', {'text':''})
 
 # Send message to players indicating if an accusation was false or true (indicating a winner)
 def broadcastAccusationResult():
-    pass
+    socketio.emit('bc_accusation_result', {'text':''})
 
 ## Client to Server:
 # Request for game state refresh
-def onGameStateRequest():
+socketio.on('game_state_request')
+def onGameStateRequest(data):
     pass
 
 # Send message to indicate which space player has moved to (character, new space name)
-def onPlayerMove():
+socketio.on('player_move')
+def onPlayerMove(data):
     pass
 
 # Send message with a suggestion from the player (character, weapon, room name)
-def onSuggestion():
+socketio.on('suggestion')
+def onSuggestion(data):
     pass
 
 # Send message to indicate which card disproves a player’s suggestion (card name, card type)
-def onSuggestionDisproof():
+socketio.on('suggestion_disproof')
+def onSuggestionDisproof(data):
     pass
 
 # Send message with an accusation from the player (character, weapon, room name)
-def onAccusation():
+socketio.on('accusation')
+def onAccusation(data):
     pass
 
 ## Server to Database:

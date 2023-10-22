@@ -30,7 +30,7 @@ python application.py
 ```
 After starting the server, the console will include a link to the front-end, typically at `http://127.0.0.1:8000`.  There you can see and test the project.
 
-5. Deploy to GitHub.  Once you have made your updates, run the following:
+5. Push to GitHub.  Once you have made your updates, run the following:
 ```
 git add .
 git commit -m "commit message here, normally describing what you updated"
