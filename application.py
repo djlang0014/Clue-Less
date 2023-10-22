@@ -3,6 +3,7 @@
 
 from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
+import psycopg
 
 # Init the server
 application = Flask(__name__)
@@ -17,6 +18,8 @@ def root():
 # Receive a message from the front end HTML
 @socketio.on('send_message')   
 def message_recieved(data):
+    if data == "test":
+        getCharacterLocation(1)
     print(data['text'])
     socketio.emit('message_from_server', {'text':'Message recieved!'})
 
@@ -82,9 +85,18 @@ def onAccusation():
 ## Database to Server:
 # Return requested data and success status of an update request
 # Getters
+"""
+Currently, these will be dummy functions. We will need to replace dbname, user, and password with approriate values.
+Select statements will have to be fixed as well.
+"""
 def getCharacterLocation(characterID):
+    with psycopg.connect("dbname=testdb user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT location FROM *table3* WHERE unique_id = %s", (characterID,))
+            print(cur.fetchone())
+            for row in cur:
+                print(row)
     pass
-
 def getPlayerName(playerID):
     pass
 
@@ -105,9 +117,21 @@ def getCaseFile(gameID):
 
 def getPlayerCards(playerID):
     pass
-
+"""
+Will we need to set default values at the start of each round? 
+I think everything will be different each time so we will just need to run these setters for each character.
+We could also make a larger function that accepts and sets all of the values for each character at the start of the game.
+"""
 # Setters
-def setCharacterLocation(characterID):
+def setCharacterLocation(characterID, location):
+    with psycopg.connect("dbname=testdb user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
+            cur.execute("UPDATE *table3* SET location = %s WHERE characterID = %s", (location, characterID,))
+            cur.execute("SELECT location FROM *table3* WHERE characterID = %s", (characterID,))
+            #fetchone() returns a tuple, so we need to index it to get the value
+            if cur.fetchone()[0] == (location):
+                print("Success")
     pass
 
 def setPlayerName(playerID):
