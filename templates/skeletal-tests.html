@@ -3,6 +3,114 @@
 <head>
     <title>Game</title>
     <link rel="stylesheet" type="text/css" href="static/tests.css">
+
+    <!-- Link to the socket.io info -->
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.0/socket.io.js"></script>
+
+    <!-- Script to handle socket.io -->
+    <script>
+        var socket;            
+        $(document).ready(function() {
+            // The http vs. https is important. Use http for localhost!
+            socket = io.connect('http://' + document.domain + ':' + location.port);
+
+            // Button was clicked
+            document.getElementById("send_button").onclick = function() {
+                // Get the text value
+                var text = document.getElementById("textfield_input").value;
+
+                // Update the chat window
+                document.getElementById("chat").innerHTML += "You: " + text + "\n\n";                    
+                
+                // Emit a message to the 'send_message' socket
+                socket.emit('send_message', {'text':text});
+                
+                // Set the textfield input to empty
+                document.getElementById("textfield_input").value = "";
+            }
+
+            // Message recieved from server
+            socket.on('message_from_server', function(data) {
+                var text = data['text'];
+                document.getElementById("chat").innerHTML += "Server: " + text + "\n\n";   
+            });
+
+        });
+
+        /////////////////////////////////////////////////////////
+        // Messages for ClueLess
+
+        // Server to Client:
+        // Send message to indicate current game state (in case of refresh) - character positions, player’s cards, and all players’ names
+        socket.on('game_state', function(data) {
+            //pass
+        });
+
+        // Send message to indicate beginning of player’s turn
+        socket.on('begin_turn', function(data) {
+            //pass
+        });
+
+        // Send message to indicate the new space a character has moved to (character, new space name)
+        socket.on('bc_movement_update', function(data) {
+            //pass
+        });
+
+        // Send message to indicate what suggestion a player has made (character, weapon, room name)
+        socket.on('bc_suggestion', function(data) {
+            //pass
+        });
+
+        // Send message to the player who made a suggestion indicating what cards other players have chosen to show them that proves the suggestion false 
+        socket.on('suggestion_disproof', function(data) {
+            //pass
+        });
+
+        // Send message to indicate what accusation a player has made (character, weapon, room name) 4
+        socket.on('bc_accusation', function(data) {
+            //pass
+        });
+
+        // Send message to an accusing player to indicate the true character, weapon, and room name 
+        socket.on('case_file', function(data) {
+            //pass
+        });
+
+        // Send message to players indicating if an accusation was false or true (indicating a winner)
+        socket.on('bc_accusation_result', function(data) {
+            //pass
+        });
+
+        //Client to Server:
+        // Request for game state refresh
+        function requestGameState() {
+            socket.emit('game_state_request', {'text':''});
+        }
+
+        // Send message to indicate which space player has moved to (character, new space name)
+        function sendPlayerMove() {
+            socket.emit('player_move', {'text':''});
+        }
+
+        // Send message with a suggestion from the player (character, weapon, room name)
+        function sendSuggestion() {
+            socket.emit('suggestion', {'text':''});
+        }
+
+        // Send message to indicate which card disproves a player’s suggestion (card name, card type)
+        function sendSuggestionDisproof() {
+            socket.emit('suggestion_disproof', {'text':''});
+        }
+
+        // Send message with an accusation from the player (character, weapon, room name)
+        function sendAccusation() {
+            socket.emit('accusation', {'text':''});
+        }
+
+        ////////////////////////////////////////////////////
+    </script>
+
     <style>
         .box {
             display: -webkit-box;
@@ -31,8 +139,8 @@
         <h1 class="game-title">Clue Less Skeletal Demo</h1>
         <div class = "box">
             First name: 
-            <input type="text" id="fname" name="fname">
-            <input type="submit" value="Submit">
+            <input type="text" id="textfield_input">
+            <button id = "send_button" style="width: 50px; height: 20px;">Send</button>
 
         </div>
         <div class = "box">
@@ -43,6 +151,8 @@
 
         </div>    
     </div>
+    <p>Welcome to the flask quick start example.</p>                        
+        <textarea id="chat" style="width: 1800px; height: 100px; font-size: 18px; font-family: monospace; margin-top: 10px;"></textarea> 
 
 </body>
 </html>

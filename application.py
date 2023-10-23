@@ -9,11 +9,11 @@ import psycopg
 application = Flask(__name__)
 socketio = SocketIO(application, logger=True)
 
-"""
+
 # Send HTML!
-@application.route('/')
-def root():    
-    return render_template('index.html')
+#@application.route('/')
+#def root():    
+#    return render_template('index.html')
 
 # Receive a message from the front end HTML
 @socketio.on('send_message')   
@@ -23,7 +23,7 @@ def message_recieved(data):
         getCharacterLocation('1')
     print(data['text'])
     socketio.emit('message_from_server', {'text':'Message received!'})
-"""
+
 # Send HTML!
 @application.route('/')
 def root():    
