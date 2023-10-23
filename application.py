@@ -7,9 +7,9 @@ import psycopg
 
 # Init the server
 application = Flask(__name__)
-application.config['SECRET_KEY'] = 'some super secret key!'
 socketio = SocketIO(application, logger=True)
 
+"""
 # Send HTML!
 @application.route('/')
 def root():    
@@ -23,6 +23,35 @@ def message_recieved(data):
         getCharacterLocation('1')
     print(data['text'])
     socketio.emit('message_from_server', {'text':'Message received!'})
+"""
+# Send HTML!
+@application.route('/')
+def root():    
+    return render_template('main_menu.html')
+
+@application.route('/play')
+def play():
+    return render_template('play.html')
+
+@application.route('/rules')
+def rules():
+    return render_template('rules.html')
+
+@application.route('/about')
+def about():
+    return render_template('about.html')
+
+@application.route('/skeletal-tests')
+def skeletal_tests():
+    return render_template('skeletal-tests.html')
+
+@socketio.on('connect')
+def test_connect():
+    socketio.emit('after connect', {'data':'Connected to Flask Socket.'})
+
+@socketio.on('message')
+def handle_message(data):
+    print('received message: ' + data)
 
 ####################################################
 # Messages for ClueLess
@@ -177,31 +206,71 @@ I think everything will be different each time so we will just need to run these
 We could also make a larger function that accepts and sets all of the values for each character at the start of the game.
 """
 # Setters
-def setCharacterLocation(characterID, location):
+def setCharacterLocation(playerID, location):
     with psycopg.connect("dbname=testdb user=postgres password=1234") as conn:
         with conn.cursor() as cur:
             #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
-            cur.execute("UPDATE *table3* SET location = %s WHERE characterID = %s", (location, characterID,))
-            cur.execute("SELECT location FROM *table3* WHERE characterID = %s", (characterID,))
+            cur.execute("UPDATE players SET location = %s WHERE player_ID = %s", (location, playerID,))
+            cur.execute("SELECT location FROM players WHERE player_ID = %s", (playerID,))
             #fetchone() returns a tuple, so we need to index it to get the value
             if cur.fetchone()[0] == (location):
                 print("Success")
-    pass
 
-def setPlayerName(playerID):
-    pass
+def setPlayerName(playerID, playerName):
+    with psycopg.connect("dbname=testdb user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
+            cur.execute("UPDATE players SET player_name = %s WHERE player_ID = %s", (playerName, playerID,))
+            cur.execute("SELECT player_name FROM players WHERE player_ID = %s", (playerID,))
+            #fetchone() returns a tuple, so we need to index it to get the value
+            if cur.fetchone()[0] == (playerName):
+                print("Success")
 
-def setPlayerCharacter(playerID):
-    pass
+def setPlayerCharacter(playerID, character_name):
+    with psycopg.connect("dbname=testdb user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
+            cur.execute("UPDATE players SET character_name = %s WHERE player_ID = %s", (character_name, playerID,))
+            cur.execute("SELECT character_name FROM players WHERE player_ID = %s", (playerID,))
+            #fetchone() returns a tuple, so we need to index it to get the value
+            if cur.fetchone()[0] == (character_name):
+                print("Success")
 
 def setMayStay(playerID):
-    pass
-
+    with psycopg.connect("dbname=testdb user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
+            #fetchone() returns a tuple, so we need to index it to get the value
+            location = cur.execute("SELECT location FROM players WHERE player_id = %s", (playerID,))
+            location = location[0]
+            if location == "Hallway":
+                cur.execute("UPDATE players SET may_stay = %s WHERE player_ID = %s", (False, playerID,))
+                cur.execute("SELECT location FROM players WHERE player_id = %s", (playerID,))
+                if not cur.fetchone()[0]:
+                    print("Success")
+            else:
+                cur.execute("UPDATE players SET may_stay = %s WHERE player_ID = %s", (True, playerID,))
+                cur.execute("SELECT location FROM players WHERE player_id = %s", (playerID,))
+                if cur.fetchone()[0]:
+                    print("Success")
+                       
 def setCurPlayer(gameID):
-    pass
+    with psycopg.connect("dbname=testdb user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT current_playerID FROM game_states WHERE game_id = %s", (gameID,))
+            #fetchone() returns a tuple, so we need to index it to get the value
+            #if cur.fetchone()[0] == (playerName):
+            #    print("Success")
 
 def setNextPlayer(playerID):
-    pass
+    with psycopg.connect("dbname=testdb user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
+            #cur.execute("UPDATE players SET player_name = %s WHERE player_ID = %s", (playerName, playerID,))
+            cur.execute("SELECT player_name FROM players WHERE player_ID = %s", (playerID,))
+            #fetchone() returns a tuple, so we need to index it to get the value
+            #if cur.fetchone()[0] == (playerName):
+            #    print("Success")
 
 def setCaseFile(gameID):
     pass
