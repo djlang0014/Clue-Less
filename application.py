@@ -9,9 +9,20 @@ socketInstance = SocketIO(application)
 @application.route('/')
 def test():
     return render_template('main_menu.html')
-    return render_template('rules.html')
-    return render_template('index.html')
+    
+    #return render_template('index.html')
     # return "<h>Clue-Less Test page.<br>Developed by Creative Engineers.</h>"
+@application.route('/play')
+def play():
+    return render_template('play.html')
+@application.route('/rules')
+def rules():
+    return render_template('rules.html')
+
+@application.route('/about')
+def about():
+    return render_template('about.html')
+@application.route('/play')
 
 @socketInstance.on('connect')
 def test_connect():
