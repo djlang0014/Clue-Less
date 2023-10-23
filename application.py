@@ -18,10 +18,11 @@ def root():
 # Receive a message from the front end HTML
 @socketio.on('send_message')   
 def message_recieved(data):
-    if data == "test":
-        getCharacterLocation(1)
+    print(data.items())
+    if data['text'] == "test":
+        getCharacterLocation('1')
     print(data['text'])
-    socketio.emit('message_from_server', {'text':'Message recieved!'})
+    socketio.emit('message_from_server', {'text':'Message received!'})
 
 ####################################################
 # Messages for ClueLess
@@ -91,37 +92,85 @@ def onAccusation(data):
 # Return requested data and success status of an update request
 # Getters
 """
-Currently, these will be dummy functions. We will need to replace dbname, user, and password with approriate values.
-Select statements will have to be fixed as well.
+The exact database layout will need to be refined for the minimal implementation, but this should be good for the skeletal.
 """
-def getCharacterLocation(characterID):
-    with psycopg.connect("dbname=testdb user=postgres password=1234") as conn:
+def getCharacterLocation(playerID):
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT location FROM *table3* WHERE unique_id = %s", (characterID,))
-            print(cur.fetchone())
-            for row in cur:
-                print(row)
-    pass
+            cur.execute("SELECT location FROM players WHERE player_id = %s", (playerID,))
+            socketio.emit('message_from_server', {'text':'Here is the player location: ' + cur.fetchone()[0]})
+
 def getPlayerName(playerID):
-    pass
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT player_name FROM players WHERE player_id = %s", (playerID,))
+            socketio.emit('message_from_server', {'text':'Here is the player name: ' + cur.fetchone()[0]})
 
 def getPlayerCharacter(playerID):
-    pass
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT character_name FROM players WHERE player_id = %s", (playerID,))
+            socketio.emit('message_from_server', {'text':'Here is the player character: ' + cur.fetchone()[0]})
 
 def getMayStay(playerID):
-    pass
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT current_playerID FROM players")
+            currentPlayerID = cur.fetchone()[0]
+            if playerID == currentPlayerID:
+                #These can be replaced with function calls later, but we are sending visible messages for now so I can't return a value.
+                location = cur.execute("SELECT location FROM players WHERE player_id = %s", (playerID,))
+                name = cur.execute("SELECT player_name FROM players WHERE player_id = %s", (playerID,))
+                if location == "Hallway":
+                    socketio.emit('message_from_server', {'text':name + 'is in a hallway and may not stay.'})
+                else:
+                    socketio.emit('message_from_server', {'text':name + 'is not in a hallway and may stay.'})
+            else:
+                socketio.emit('message_from_server', {'text':'It is not your turn.'})
 
 def getCurPlayer(gameID):
-    pass
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT current_playerID FROM players WHERE game_id = %s", (gameID,))
+            socketio.emit('message_from_server', {'text':'It is : ' + cur.fetchone()[0]} + "'s turn.")
 
 def getNextPlayer(playerID):
-    pass
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT MAX(player_id) FROM players")
+            if playerID < cur.fetchone()[0]:
+                cur.execute("SELECT player_name FROM players WHERE player_id = %s", (playerID + 1,))
+                socketio.emit('message_from_server', {'text':cur.fetchone()[0] + " has the next turn."} )    
 
 def getCaseFile(gameID):
-    pass
+    #This can be a join or something
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            #Returns an array of card IDs which are integers. Will be in location, character, weapon order.
+            cur.execute("SELECT case_file FROM game_info WHERE game_id = %s", (gameID,))
+            caseFile = cur.fetchone()[0]
+            cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[0],))
+            location = cur.fetchone()[0]
+            cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[1],))
+            character = cur.fetchone()[0]
+            cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[2],))
+            weapon = cur.fetchone()[0]
+            socketio.emit('message_from_server', {'text':'The case file is: ' + location + ", " + character + ", " + weapon})
 
 def getPlayerCards(playerID):
-    pass
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            #Returns an array of card IDs which are integers. Will be in location, character, weapon order.
+            cur.execute("SELECT card_ids FROM players WHERE player_ID = %s", (playerID,))
+            caseFile = cur.fetchone()[0]
+            cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[0],))
+            location = cur.fetchone()[0]
+            cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[1],))
+            character = cur.fetchone()[0]
+            cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[2],))
+            weapon = cur.fetchone()[0]
+            socketio.emit('message_from_server', {'text':'The case file is: ' + location + ", " + character + ", " + weapon})
+
 """
 Will we need to set default values at the start of each round? 
 I think everything will be different each time so we will just need to run these setters for each character.
