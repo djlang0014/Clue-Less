@@ -207,7 +207,7 @@ We could also make a larger function that accepts and sets all of the values for
 """
 # Setters
 def setCharacterLocation(playerID, location):
-    with psycopg.connect("dbname=testdb user=postgres password=1234") as conn:
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
         with conn.cursor() as cur:
             #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
             cur.execute("UPDATE players SET location = %s WHERE player_ID = %s", (location, playerID,))
@@ -217,7 +217,7 @@ def setCharacterLocation(playerID, location):
                 print("Success")
 
 def setPlayerName(playerID, playerName):
-    with psycopg.connect("dbname=testdb user=postgres password=1234") as conn:
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
         with conn.cursor() as cur:
             #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
             cur.execute("UPDATE players SET player_name = %s WHERE player_ID = %s", (playerName, playerID,))
@@ -227,7 +227,7 @@ def setPlayerName(playerID, playerName):
                 print("Success")
 
 def setPlayerCharacter(playerID, character_name):
-    with psycopg.connect("dbname=testdb user=postgres password=1234") as conn:
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
         with conn.cursor() as cur:
             #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
             cur.execute("UPDATE players SET character_name = %s WHERE player_ID = %s", (character_name, playerID,))
@@ -237,7 +237,7 @@ def setPlayerCharacter(playerID, character_name):
                 print("Success")
 
 def setMayStay(playerID):
-    with psycopg.connect("dbname=testdb user=postgres password=1234") as conn:
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
         with conn.cursor() as cur:
             #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
             #fetchone() returns a tuple, so we need to index it to get the value
@@ -255,7 +255,7 @@ def setMayStay(playerID):
                     print("Success")
                        
 def setCurPlayer(gameID):
-    with psycopg.connect("dbname=testdb user=postgres password=1234") as conn:
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT current_playerID FROM game_states WHERE game_id = %s", (gameID,))
             #fetchone() returns a tuple, so we need to index it to get the value
@@ -263,7 +263,7 @@ def setCurPlayer(gameID):
             #    print("Success")
 
 def setNextPlayer(playerID):
-    with psycopg.connect("dbname=testdb user=postgres password=1234") as conn:
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
         with conn.cursor() as cur:
             #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
             #cur.execute("UPDATE players SET player_name = %s WHERE player_ID = %s", (playerName, playerID,))
