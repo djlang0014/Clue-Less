@@ -1,7 +1,11 @@
 # Clue-Less
 Repository for the Clue-Less game, a lite version of the traditional Clue game. This game was developed for JHU WSE's Foundations of Software Engineering course.
 
-## How-To
+## Required Programs
+PostgreSQL must be installed for psycopg to function. Additionally, a database must be restored from the Skeletal file which pgAdmin4, a tool included in the PostgreSQL installation, is able to do.
+https://www.postgresql.org/download/
+
+### How-To
 (Disclaimer: these steps are what I have taken on my Linux/Ubuntu computer.  Steps may differ for Mac or Windows)
 1. It is assumed you have already cloned the Clue-Less GitHub repo and have a terminal open in the top folder of the repo folder structure.  It is also highly recommended to run `git pull` before editing the project.
 
