@@ -112,6 +112,17 @@
     </script>
 
     <style>
+        .column{
+            float:inline-start;
+            
+            width: 31%;
+            padding: 10px;
+        }
+        .row::after {
+            content: "";
+            clear: both;
+            display: table;
+        }
         .box {
             display: -webkit-box;
             display: -moz-box;
@@ -137,19 +148,84 @@
 <body>
     <div class="menu-container-flex"> 
         <h1 class="game-title">Clue Less Skeletal Demo</h1>
-        <div class = "box">
-            First name: 
-            <input type="text" id="textfield_input">
-            <button id = "send_button" style="width: 50px; height: 20px;">Send</button>
-
-        </div>
-        <div class = "box">
-            Last name:
-            <input type="text" id="lname" name="lname">
-            <input type="submit" value="Submit">
-            
-
-        </div>    
+        <div class ="row">
+            <div class ="column">
+                <div class = "box">
+                    First name: 
+                    <input type="text" id="textfield_input1">
+                    <button id = "send_button1" style="width: 50px; height: 20px;">Send1</button>
+                </div>
+                <div class = "box">
+                    First name: 
+                    <input type="text" id="textfield_input2">
+                    <button id = "send_button2" style="width: 50px; height: 20px;">Send2</button>
+                </div>
+                <div class = "box">
+                    Last name:
+                    <input type="text" id="lname1" name="lname1">
+                    <input type="submit" value="Submit">
+                </div> 
+                <div class = "box">
+                    Last name:
+                    <input type="text" id="lname2" name="lname2">
+                    <input type="submit" value="Submit">
+                </div> 
+                <div class = "box">
+                    Last name:
+                    <input type="text" id="lname3" name="lname3">
+                    <input type="submit" value="Submit">
+                </div> 
+            </div>
+            <div class ="column">
+                <div class = "box">
+                    First name: 
+                    <input type="text" id="textfield_input3">
+                    <button id = "send_button3" style="width: 50px; height: 20px;">Send3</button>
+                </div>
+                <div class = "box">
+                    First name: 
+                    <input type="text" id="textfield_input4">
+                    <button id = "send_button4" style="width: 50px; height: 20px;">Send4</button>
+                </div>
+                <div class = "box">
+                    Last name:
+                    <input type="text" id="lname4" name="lname4">
+                    <input type="submit" value="Submit">
+                </div> 
+                <div class = "box">
+                    Last name:
+                    <input type="text" id="lname5" name="lname5">
+                    <input type="submit" value="Submit">
+                </div> 
+                <div class = "box">
+                    Last name:
+                    <input type="text" id="lname6" name="lname6">
+                    <input type="submit" value="Submit">
+                </div> 
+            </div>
+            <div class ="column">
+                <div class = "box">
+                    First name: 
+                    <input type="text" id="textfield_input5">
+                    <button id = "send_button5" style="width: 50px; height: 20px;">Send</button>
+                </div>
+                <div class = "box">
+                    First name: 
+                    <input type="text" id="textfield_input6">
+                    <button id = "send_button6" style="width: 50px; height: 20px;">Send6</button>
+                </div>
+                <div class = "box">
+                    Last name:
+                    <input type="text" id="lname7" name="lname7">
+                    <input type="submit" value="Submit">
+                </div> 
+                <div class = "box">
+                    Last name:
+                    <input type="text" id="lname8" name="lname8">
+                    <input type="submit" value="Submit">
+                </div> 
+            </div>
+        </div>   
     </div>
     <p>Welcome to the flask quick start example.</p>                        
         <textarea id="chat" style="width: 1800px; height: 100px; font-size: 18px; font-family: monospace; margin-top: 10px;"></textarea> 
