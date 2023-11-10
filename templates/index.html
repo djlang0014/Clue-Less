@@ -1,43 +1,132 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Tutorial on Flask: A Web socket example</title>
-<script src="https://code.jquery.com/jquery-3.3.1.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.0/socket.io.js"></script>
-<script type="text/javascript">
-    var socket = io.connect();
+<!-- File originally downloaded from https://github.com/josharnoldjosh/simple-flask-socketio-example
+on 10/21/23.  Has been modified by Creative Engineers for the Clue-Less project. -->
+<html>
+    <head>
+        <!-- Some basic meta info -->
+        <title>Example</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    $(document).ready(function() {
-    // sending a connect request to the server.
-        
-        socket.emit('after connect', function(connectMsg) {
-            $('#log').append('<br>' + $('<div/>').text('What is the intention of the code: ' + connectMsg.data).html());
-        });
+        <!-- A stylesheet to make things automatically look nice -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.min.css">
 
-    });
+        <!-- Link to the socket.io info -->
+        <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
+        <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.0/socket.io.js"></script>
 
-    $(document).ready(function(){
-        $('#form').submit(function(){
-            socket.emit('message', $('#Input').val());
-            //socket.emit('message', "Input");
-            //$('#Input').val('');
-            return false;
+        <!-- Script to handle socket.io -->
+        <script>
+            var socket;            
+            $(document).ready(function() {
+                // The http vs. https is important. Use http for localhost!
+                socket = io.connect('http://' + document.domain + ':' + location.port);
 
-        });
-    });
-</script>
-</head>
-</head>
-<body>
-<h1>Example on SocketIO : EduCBA</h1>
-<h2>Message Received:</h2>
-<div id="log"></div>
-<form>
-    Message:
-    <input type="text" id="Input">
-    <br>
-    <input type="submit">
-</form>
-</body>
+                // Button was clicked
+                document.getElementById("send_button").onclick = function() {
+                    // Get the text value
+                    var text = document.getElementById("textfield_input").value;
+
+                    // Update the chat window
+                    document.getElementById("chat").innerHTML += "You: " + text + "\n\n";                    
+                    
+                    // Emit a message to the 'send_message' socket
+                    socket.emit('send_message', {'text':text});
+
+                    // Set the textfield input to empty
+                    document.getElementById("textfield_input").value = "";
+                }
+
+                // Message recieved from server
+                socket.on('message_from_server', function(data) {
+                    var text = data['text'];
+                    document.getElementById("chat").innerHTML += "Server: " + text + "\n\n";   
+                });
+
+            });
+
+            /////////////////////////////////////////////////////////
+            // Messages for ClueLess
+
+            // Server to Client:
+            // Send message to indicate current game state (in case of refresh) - character positions, player’s cards, and all players’ names
+            socket.on('game_state', function(data) {
+                //pass
+            });
+
+            // Send message to indicate beginning of player’s turn
+            socket.on('begin_turn', function(data) {
+                //pass
+            });
+
+            // Send message to indicate the new space a character has moved to (character, new space name)
+            socket.on('bc_movement_update', function(data) {
+                //pass
+            });
+
+            // Send message to indicate what suggestion a player has made (character, weapon, room name)
+            socket.on('bc_suggestion', function(data) {
+                //pass
+            });
+
+            // Send message to the player who made a suggestion indicating what cards other players have chosen to show them that proves the suggestion false 
+            socket.on('suggestion_disproof', function(data) {
+                //pass
+            });
+
+            // Send message to indicate what accusation a player has made (character, weapon, room name) 4
+            socket.on('bc_accusation', function(data) {
+                //pass
+            });
+
+            // Send message to an accusing player to indicate the true character, weapon, and room name 
+            socket.on('case_file', function(data) {
+                //pass
+            });
+
+            // Send message to players indicating if an accusation was false or true (indicating a winner)
+            socket.on('bc_accusation_result', function(data) {
+                //pass
+            });
+
+            //Client to Server:
+            // Request for game state refresh
+            function requestGameState() {
+                socket.emit('game_state_request', {'text':''});
+            }
+
+            // Send message to indicate which space player has moved to (character, new space name)
+            function sendPlayerMove() {
+                socket.emit('player_move', {'text':''});
+            }
+
+            // Send message with a suggestion from the player (character, weapon, room name)
+            function sendSuggestion() {
+                socket.emit('suggestion', {'text':''});
+            }
+
+            // Send message to indicate which card disproves a player’s suggestion (card name, card type)
+            function sendSuggestionDisproof() {
+                socket.emit('suggestion_disproof', {'text':''});
+            }
+
+            // Send message with an accusation from the player (character, weapon, room name)
+            function sendAccusation() {
+                socket.emit('accusation', {'text':''});
+            }
+
+            ////////////////////////////////////////////////////
+        </script>
+    </head>
+
+    <body>
+        <div style="margin: 25px; display: flex; flex-direction: column;">
+            <h1 class="title">Hello {{username}}.</h1>
+            <p>Welcome to the flask quick start example.</p>                        
+            <textarea id="chat" style="width: 500px; height: 250px; font-size: 18px; font-family: monospace; margin-top: 10px;"></textarea>                 
+            <div style="display: flex; flex-direction: row;">
+                <input type="text" id="textfield_input" style="height: 30px; width: 400px; margin-top: 5px; margin-right: 10px;" class="textfield"> 
+                <button id="send_button" class="button is-primary" style="margin-top: 5px; width: 90px; height: 30px;">Send</button>
+            </div>
+        </div>        
+    </body>
 </html>
