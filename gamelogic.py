@@ -1,9 +1,10 @@
 from gameinfo import *
 
 class Lobby:
-    def __init__(self):
+    def __init__(self, gameRoom):
+        self.gameRoom = gameRoom
         self.players = []
-        pass
+        return
 
     def startGame(self):
         #This will have to make a new game instance object
@@ -15,7 +16,7 @@ class Lobby:
     def joinLobby(self, player):
         self.players.append(player)
 
-class GameInstance():
+class GameInstance:
     def __init__(self, gameID, players):
         self.gameID = gameID
         self.players = players

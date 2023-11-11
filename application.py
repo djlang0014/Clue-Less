@@ -4,10 +4,13 @@
 from flask import Flask, render_template
 from flask_socketio import SocketIO, emit
 import psycopg
+import gamelogic
 
 # Init the server
 application = Flask(__name__)
 socketio = SocketIO(application, logger=True)
+
+gameRooms = {}
 
 
 # Send HTML!
