@@ -1,10 +1,16 @@
 from gameinfo import *
 
 class Lobby:
-    def __init__(self, gameRoom):
-        self.gameRoom = gameRoom
+    def __init__(self, roomCode):
+        """
+        Initializer for a Lobby instance. Creates as new Lobby, starts a list
+            of players, and saves the roomCode for the Lobby/GameInstance
+        Parameters:
+            roomCode (string, len=6): identifier for the Flask Room. Random
+                string of numbers and lowercase letters.
+        """
+        self.roomCode = roomCode
         self.players = []
-        return
 
     def startGame(self):
         #This will have to make a new game instance object
@@ -13,8 +19,11 @@ class Lobby:
     def removePlayer(self, player):
         self.players.remove(player)
 
-    def joinLobby(self, player):
+    def addPlayer(self, player):
         self.players.append(player)
+
+    def getNumPlayers(self):
+        return len(self.players)
 
 class GameInstance:
     def __init__(self, gameID, players):

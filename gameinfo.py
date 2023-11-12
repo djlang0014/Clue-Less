@@ -21,9 +21,9 @@ class Location:
         pass
 
 class Player:
-    def __init__(self, name, playerID):
+    def __init__(self, name):
         self.name = name
-        self.playerID = playerID
+        self.playerID = None
         self.character = None
         self.cards = [] #Cards will be set in driver code
         self.maySuggest = True
@@ -44,6 +44,9 @@ class Player:
     def getPlayerCards(self):
         #This will return the cards the player has
         pass
+
+    def getPlayerName(self):
+        return self.name
 
 class Card:
     def __init__(self, cardType, cardName, cardID):
