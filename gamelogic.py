@@ -32,6 +32,7 @@ class GameInstance:
         self.currentPlayer = players[0]
         self.caseFile = None
         self.locations = None
+        self.playerLocations = {} #PlayerID:Location
         pass
 
     def setCurrentPlayer(self, player):
@@ -55,4 +56,10 @@ class GameInstance:
     def getLocationList(self):
         #This will make the list of locations for the game
         pass
+    
+    def changePlayerLocation(self, playerID, location):
+        self.playerLocations[playerID] = location
+        pass
 
+    def getPlayerLocation(self, playerID):
+        return self.playerLocations[playerID]

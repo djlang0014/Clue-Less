@@ -13,7 +13,9 @@ class Location:
 
     def removeCharacterPresent(self, character):
         self.charactersPresent.remove(character)
-
+    
+    def checkAccess(self):
+        pass
     def checkBoard(self):
         pass
 
@@ -71,10 +73,11 @@ class DBAccess:
         pass
 
 class CaseFile:
-    def __init__(self):
-        self.suspect = None
-        self.weapon = None
-        self.room = None
+    def __init__(self, suspect, weapon, room):
+        #This will actually be generated in generateCaseFile, but I'm putting it here for testing
+        self.suspect = suspect
+        self.weapon = weapon
+        self.room = room
 
     def generateCaseFile(self, GameInstance):
         #This will generate the case file for the game
