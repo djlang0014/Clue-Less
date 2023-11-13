@@ -100,8 +100,6 @@ body {
     background-color: black;
 }
 
-
-
 .suggestzone{
     display: grid;
 }
@@ -163,5 +161,12 @@ body {
     font-family: 'Courier New';
     font-weight: 700;
     text-align: center;
-    left: 73.75w;
+    left: 73.65vw;
+}
+
+.serverchat{
+    position: fixed;
+    left: 73.65vw;
+    height: 45vh;
+    width: 25vw;
 }

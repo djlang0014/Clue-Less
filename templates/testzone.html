@@ -24,6 +24,7 @@
                 // Set the textfield input to empty
                 document.getElementById("textfield_input1").value = "";
             }
+
             // Message recieved from server
             socket.on('message_from_server', function(data) {
                 var text = data['text'];
@@ -36,7 +37,6 @@
 
     <style>
 
-       
         .radio-list-accuse{
             position: relative;
             left: 52.5vw;
@@ -67,11 +67,19 @@
             grid-template-rows: 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh;
 
         }
+        .endTurnContainer{
+            position: fixed;
+            left:52.5vw;
+            width:30vw;
+            height: 90vh;
+            display: none;
+        }
         .output {
             margin: 0;
             padding: 0;
             display: none;
         }
+
     </style>
     
 </head>
@@ -104,6 +112,14 @@
         <button onclick = "showAccuseList()">Accuse</button>
     </div>
 
+    <div class = "endbutton">
+        <button onclick = "showEndTurn()">End Turn</button>
+    </div>
+
+    <div id = "serverchat" class = "serverchat">
+        <textarea id="chat" style="width: 450px; height: 750px; font-size: 18px; font-family: monospace; margin-top: 10px;"></textarea>
+    </div>
+
     <div id = "accuseRadio" class = "radio-list-accuse">
         <form method = "post" action = "/accusesubmit" target = "hidden-iframe">
             <h3>Weapon</h3>
@@ -120,9 +136,9 @@
                 <input type="radio" name="Character" value="Miss Scarlet"> Miss Scarlet
                 <input type="radio" name="Character" value="Mrs. Peacock"> Mrs. Peacock 
                 <input type="radio" name="Character" value="Mrs. White"> Mrs. White 
-                <input type="radio" name="Character" value="Colonel Mustard"> Colonel Mustard 
-                <input type="radio" name="Character" value="Reverend Green"> Reverend Green
-                <input type="radio" name="Character" value="Professor Plum"> Professor Plum 
+                <input type="radio" name="Character" value="Col Mustard"> Col. Mustard 
+                <input type="radio" name="Character" value="Mr. Green"> Mr. Green
+                <input type="radio" name="Character" value="Prof Plum"> Prof Plum 
                 <input type="radio" name="Character" value="Dr. Orchid"> Dr. Orchid 
                 <input type="radio" name="Character" value="Miss Peach"> Miss Peach 
             </label>
@@ -165,14 +181,32 @@
             <h3>Weapon</h3>
             <label>
                 <input type="radio" name="Weapon" value="Candlestick"> Candlestick
+                <input type="radio" name="Weapon" value="Knife"> Knife
+                <input type="radio" name="Weapon" value="Revolver"> Revolver
+                <input type="radio" name="Weapon" value="Lead Pipe"> Lead Pipe
+                <input type="radio" name="Weapon" value="Wrench"> Wrench
+                <input type="radio" name="Weapon" value="Rope"> Rope
             </label>
             <h3>Character</h3>
             <label>
                 <input type="radio" name="Character" value="Miss Scarlet"> Miss Scarlet
+                <input type="radio" name="Character" value="Mrs. Peacock"> Mrs. Peacock 
+                <input type="radio" name="Character" value="Mrs. White"> Mrs. White 
+                <input type="radio" name="Character" value="Col Mustard"> Col. Mustard 
+                <input type="radio" name="Character" value="Mr. Green"> Mr. Green
+                <input type="radio" name="Character" value="Prof Plum"> Prof Plum 
+                <input type="radio" name="Character" value="Dr. Orchid"> Dr. Orchid 
+                <input type="radio" name="Character" value="Miss Peach"> Miss Peach 
             </label>
             <input type = "submit" value = "Submit">
         </form>
     </div>
+
+    <div id = "endTurnContainer" class = "endTurnContainer">
+        <form method = "post" action = "/endturnsubmit" target = "hidden-iframe">
+            <h1>Are you sure?</h1>
+            <input type = "submit" value = "End Turn">
+        </form>
     
     <div class = "output">
         <p id='output'></p>
@@ -186,6 +220,7 @@
         var moveContainer = document.getElementById('moveRadio');
         var suggestContainer = document.getElementById('suggestRadio');
         var accuseContainer = document.getElementById('accuseRadio');
+        var endTurnContainer = document.getElementById('endTurnContainer');
 
         document.onmousemove=getCursorPos;
         var output = document.getElementById('output');
@@ -237,6 +272,7 @@
         function showAccuseList(){
             moveContainer.style.display = "none";
             suggestContainer.style.display = "none";
+            endTurnContainer.style.display = "none";
 
             if(accuseContainer.style.display === "none")
             {
@@ -251,6 +287,7 @@
         function showSuggestList(){
             moveContainer.style.display = "none";
             accuseContainer.style.display = "none";
+            endTurnContainer.style.display = "none";
 
             if(suggestContainer.style.display === "none")
             {
@@ -265,6 +302,7 @@
         function showMoveList(){
             suggestContainer.style.display = "none";
             accuseContainer.style.display = "none";
+            endTurnContainer.style.display = "none";
 
             if(moveContainer.style.display === "none")
             {
@@ -274,6 +312,26 @@
             {
                 moveContainer.style.display = "none";
             }
+        }
+
+        function showEndTurn(){
+            suggestContainer.style.display = "none";
+            accuseContainer.style.display = "none";
+            moveContainer.style.display = "none";
+
+            if(endTurnContainer.style.display === "none")
+            {
+                endTurnContainer.style.display = "grid";
+            }
+            else
+            {
+                endTurnContainer.style.display = "none";
+            }
+
+        }
+
+        function updateLocationsAndRadioButtons(){
+            fetch('/getlocations')
         }
 
 

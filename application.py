@@ -14,6 +14,10 @@ ROOM_CODE_CHARS = string.ascii_lowercase + string.digits
 
 gameRooms = {}
 
+playerList = []
+playerDict = {}
+#add a disabled characters list to disable them for people who join later
+
 cards = [
     Card("Character", "Miss Scarlet"),
     Card("Character", "Col. Mustard"),
@@ -21,6 +25,8 @@ cards = [
     Card("Character", "Mr. Green"),
     Card("Character", "Mrs. Peacock"),
     Card("Character", "Prof. Plum"),
+    Card("Character", "Dr. Orchid"),
+    Card("Character", "Miss Peach"),
     Card("Location", "Study"),
     Card("Location", "Hall"),
     Card("Location", "Lounge"),
@@ -36,6 +42,30 @@ cards = [
     Card("Weapon", "Wrench"),
     Card("Weapon", "Candlestick"),
     Card("Weapon", "Revolver"),
+]
+
+location = [
+    Location("Study", "Room", 2, ["Hall1", "Hall3", "Kitchen"]),
+    Location("Hall1", "Hallway", 1, ["Study", "Hall"]),
+    Location("Hall", "Room", 2, ["Hall1", "Hall2", "Hall4"]),
+    Location("Hall2", "Hallway", 1, ["Hall", "Lounge"]),
+    Location("Lounge", "Room", 2, ["Hall3", "Hall5", "Conservatory"]),
+    Location("Hall3", "Hallway", 1, ["Study", "Library"]),
+    Location("Hall4", "Hallway", 1, ["Hall", "Billiard"]),
+    Location("Hall5", "Hallway", 1, ["Lounge", "Dining"]),
+    Location("Libary", "Room", 2, ["Hall3", "Hall6", "Hall8"]),
+    Location("Hall6", "Hallway", 1, ["Billiard", "Library"]),
+    Location("Billiard", "Room", 2, ["Hall4", "Hall6", "Hall7", "Hall9"]),
+    Location("Hall7", "Hallway", 1, ["Billiard", "Dining"]),
+    Location("Dining", "Room", 2, ["Hall5", "Hall7", "Hall10"]),
+    Location("Hall8", "Hallway", 1, ["Library", "Conservatory"]),
+    Location("Hall9", "Hallway", 1, ["Billiard", "Ballroom"]),
+    Location("Hall10", "Hallway", 1, ["Dining", "Kitchen"]),
+    Location("Conservatory", "Room", 2, ["Hall8", "Hall11", "Lounge"]),
+    Location("Hall11", "Hallway", 1, ["Conservatory", "Ballroom"]),
+    Location("Ballroom", "Room", 2, ["Hall9", "Hall11", "Hall12"]),
+    Location("Hall12", "Hallway", 1, ["Ballroom", "Kitchen"]),
+    Location("Kitchen", "Room", 2, ["Hall10", "Hall12", "Study"]),
 ]
 
 characters = ["Miss Scarlet", "Prof. Plum", "Mrs. Peacock", "Mr. Green",
@@ -130,7 +160,8 @@ def on_create(data):
     username = data['username']
     #Create new player
     new_player = Player(username, request.sid)
-
+    playerList.append(new_player)
+    playerDict[request.sid] = new_player
     #Create unique game/roomCode
     while True:
         roomCode = ''.join(random.choice(ROOM_CODE_CHARS) for i in range(6))
@@ -149,6 +180,9 @@ def on_join(data):
     username = data['username']
     #Create new player
     new_player = Player(username, request.sid)
+    playerList.append(new_player)
+    playerDict[request.sid] = new_player
+    
 
     room = data['roomCode']
     if room not in gameRooms:
@@ -160,7 +194,7 @@ def on_join(data):
     else:
         join_room(room)
         gameRooms[room].addPlayer(new_player)
-        print(gameRooms)
+
         #When other game started, updated all host pages with the new room code,
         # but joining a game did not trigger the response on the host
         socketio.emit("join_conf", {'code': room, 'text': 'User has joined the room.'}, to=request.sid)
@@ -173,11 +207,19 @@ def on_game_start(data):
     roomCode = data['roomCode']
     # Start GameInstance object and replace the game's Lobby in the gameRooms hashmap
     gameRooms[roomCode] = gameRooms[roomCode].startGame()
-    socketio.emit("start_game_all", {'url': url_for('testzone.html')}, to=roomCode)
+    socketio.emit("start_game_all", {'url': url_for('testzone')}, to=roomCode)
 
+@socketio.on('select_character')
+def select_character(data):
+    playerDict[request.sid].selectCharacter(data['character'])
+    roomCode = data['roomCode']
+    player = playerDict[request.sid]
+    print(player.character)
+    socketio.emit("disable_character", {'character': data['character']})
+    
 
 @application.route('/testzone')
-def test_zone():
+def testzone():
     global locationList
     global ballroom
     global billiard_room
@@ -227,9 +269,7 @@ def accusesubmit():
 
 @application.route('/movesubmit', methods = ['POST'])
 def movesubmit():
-    print("here")
     newLocation = request.form['Location']
-    print(newLocation)
     for location in locationList:
         if location.locName == newLocation:
             testInstance.changePlayerLocation(1, location)
@@ -239,6 +279,10 @@ def movesubmit():
 def suggestsubmit():
     print(f"{request.form['Weapon']}, {request.form['Character']}")
     return "1"
+
+
+
+
 
 ####################################################
 # Messages for ClueLess
