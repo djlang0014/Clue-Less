@@ -41,7 +41,12 @@
             socket.on('players_in_lobby', function(data) {
                 var num = data['num'];
                 document.getElementById("num-players").innerHTML = num;
-            });    
+            });   
+            
+            socket.on('to_host', function(data) {
+                var text = data['text'];
+                document.getElementById("host-test").innerHTML = text;
+            });
 
         });
     </script>
@@ -51,6 +56,7 @@
     <div class="menu-container" style="max-width:600px">
         <h1 class="game-title">Welcome to Clue-Less</h1>
         <h2 class="game-title" id="code"> </h2>
+        <h3 class="game-text" id="host-test"> </h3>
         <div id="button-div" style="text-align:center">
             <label for="username" class="game-text">Please enter your username: </label>
             <input type="text" id="username" name="username"><br>

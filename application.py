@@ -129,7 +129,7 @@ def handle_message(data):
 def on_create(data):
     username = data['username']
     #Create new player
-    new_player = Player(username)
+    new_player = Player(username, request.sid)
 
     #Create unique game/roomCode
     while True:
@@ -148,7 +148,7 @@ def on_create(data):
 def on_join(data):
     username = data['username']
     #Create new player
-    new_player = Player(username)
+    new_player = Player(username, request.sid)
 
     room = data['roomCode']
     if room not in gameRooms:
@@ -158,6 +158,7 @@ def on_join(data):
         gameRooms[room].addPlayer(new_player)
         socketio.emit("join_conf", {'code': room, 'text': 'User has joined the room.'})
         socketio.emit("players_in_lobby", {'num': gameRooms[room].getNumPlayers()}, to=room)
+        socketio.emit("to_host", {'text':'Test messageNOW'}, to=gameRooms[room].players[0])
 
 @application.route('/testzone')
 def test_zone():

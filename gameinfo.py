@@ -23,8 +23,9 @@ class Location:
         pass
 
 class Player:
-    def __init__(self, name, playerID = None):
+    def __init__(self, name, sessionID, playerID = None):
         self.name = name
+        self.sid = sessionID
         self.playerID = None
         self.character = None
         self.cards = [] #Cards will be set in driver code
