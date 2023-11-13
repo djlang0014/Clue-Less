@@ -1,13 +1,19 @@
 # File originally downloaded from https://github.com/josharnoldjosh/simple-flask-socketio-example
 # on 10/21/23.  Has been modified by Creative Engineers for the Clue-Less project.
-
-from flask import Flask, render_template, request
-from flask_socketio import SocketIO, emit
+import random
+import string
+from flask import Flask, render_template
+from flask_socketio import SocketIO, emit, join_room, leave_room
 import psycopg
-from gameplay import playgame
-from gameinfo import *
-from gamelogic import *
-import threading
+from gamelogic import Lobby, GameInstance
+from gameinfo import Player
+
+ROOM_CODE_CHARS = string.ascii_lowercase + string.digits
+
+gameRooms = {}
+
+characters = ["Miss Scarlet", "Prof. Plum", "Mrs. Peacock", "Mr. Green",
+              "Mrs. White", "Col. Mustard"]
 
 # Init the server
 application = Flask(__name__)
@@ -76,14 +82,13 @@ def about():
 def skeletal_tests():
     return render_template('skeletal-tests.html')
 
-@application.route('/testzone')
-def test_zone():
-    testPlayer = Player("Test Player", 1)
-    testPlayer.selectCharacter("Miss Scarlet")
-    testInstance = GameInstance(1, [testPlayer])
-    game_thread = threading.Thread(target=playgame, args=(testInstance, socketio, application))
-    game_thread.start()
-    return render_template('testzone.html')
+@application.route('/host-lobby')
+def create_lobby():
+    return render_template('host-lobby.html', character_list=characters)
+
+@application.route('/join-lobby')
+def join_lobby():
+    return render_template('join-lobby.html', character_list=characters)
 
 @socketio.on('connect')
 def test_connect():
@@ -93,22 +98,40 @@ def test_connect():
 def handle_message(data):
     print('received message: ' + data)
 
-@application.route('/accusesubmit', methods = ['POST'])
-def accusesubmit():
-    print(f"{request.form['Weapon']}, {request.form['Character']}, {request.form['Location']}")
-    return "1"
+#Create Game Room
+@socketio.on('create')
+def on_create(data):
+    username = data['username']
+    #Create new player
+    new_player = Player(username)
 
-@application.route('/movesubmit', methods = ['POST'])
-def movesubmit():
-    print(f"{request.form['Location']}")
-    return "1"
+    #Create unique game/roomCode
+    while True:
+        roomCode = ''.join(random.choice(ROOM_CODE_CHARS) for i in range(6))
+        # Ensure code is unique
+        if roomCode not in gameRooms:
+            break
+    
+    gameRooms[roomCode] = Lobby(roomCode)
+    join_room(roomCode)
+    gameRooms[roomCode].addPlayer(new_player)
+    socketio.emit("room_code", {'text': roomCode})
 
-@application.route('/suggestsubmit', methods = ['POST'])
-def suggestsubmit():
-    print(f"{request.form['Weapon']}, {request.form['Character']}")
-    return "1"
+#Join existing Game Room
+@socketio.on('join')
+def on_join(data):
+    username = data['username']
+    #Create new player
+    new_player = Player(username)
 
-
+    room = data['roomCode']
+    if room not in gameRooms:
+        socketio.emit("invalid_room_code", {'text': "Game lobby '" + room + "' does not exist.<br>Please enter a valid lobby code:"})
+    else:
+        join_room(room)
+        gameRooms[room].addPlayer(new_player)
+        socketio.emit("join_conf", {'code': room, 'text': 'User has joined the room.'})
+        socketio.emit("players_in_lobby", {'num': gameRooms[room].getNumPlayers()})
 
 ####################################################
 # Messages for ClueLess
@@ -381,5 +404,3 @@ def setPlayerCards(playerID):
 if __name__ == '__main__':
     """ Run the app. """    
     socketio.run(application, port=8000, debug=True)
-    
-
