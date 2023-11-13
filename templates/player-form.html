@@ -1,0 +1,14 @@
+<link rel="stylesheet" type="text/css" href="static/style.css">
+
+<div id="player-form" class="menu-container" style="display:none; text-align:left">
+    <form>
+        <label for="username" class="game-text">Name:</label><br>
+        <input type="text" id="username" name="username"><br>
+        <p  class="game-text">Please choose a character:</p>
+        {% for character in character_list %}
+            <input type="radio" id="{{character}}" name="player_character" value="{{character}}">
+            <label for="{{character}}" class="game-text">{{character}}</label><br>
+        {% endfor %}
+
+    </form> 
+</div> 
