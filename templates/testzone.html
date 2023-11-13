@@ -3,26 +3,29 @@
 <html>
 <head>
     <link rel="stylesheet" type="text/css" href="static/gameplaytest.css">
+    <!-- Link to the socket.io info -->
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.0/socket.io.js"></script>
 
     <script>
         var socket;            
         $(document).ready(function() {
             // The http vs. https is important. Use http for localhost!
             socket = io.connect('http://' + document.domain + ':' + location.port);
-
-            // Button was clicked
-            document.getElementById("send_button1").onclick = function() {
+            
+            document.getElementById("submittest").onclick = function(){
                 // Get the text value
-                var text = document.getElementById("textfield_input1").value;
+                var text = document.getElementById("testo").value;
 
-                // Update the chat window
-                document.getElementById("chat").innerHTML += "You: " + text + "\n\n";                    
-                
                 // Emit a message to the 'send_message' socket
-                socket.emit('send_message', {'text':text}, 1);
+                socket.emit('message', {'text':text});
 
                 // Set the textfield input to empty
-                document.getElementById("textfield_input1").value = "";
+                document.getElementById("testo").value = "";
+            }
+
+            document.getElementById("getinfo").onclick = function(){
+                socket.emit('request_player_info');
             }
 
             // Message recieved from server
@@ -30,6 +33,26 @@
                 var text = data['text'];
                 document.getElementById("chat").innerHTML += "Server: " + text + "\n\n";   
             });
+
+            socket.on('playerinfo', function(data) {
+                console.log(data);
+                playername = data['playername'];
+                playercharacter = data['playercharacter'];
+                document.getElementById('playerinfooutput').innerText = "Player Name: " + playername + "\nPlayer Character: " + playercharacter;
+            });
+
+            socket.on('playercard', function(data){
+                var outputlist = document.getElementById("cardoutput");
+                outputlist.innerHTML = '';
+
+                data.forEach(function(item){
+                    var li = document.createElement("li");
+                    li.textContent = item;
+                    outputlist.appendChild(li);
+                });
+
+            });
+
 
         });
 
@@ -97,6 +120,14 @@
     </div>
     <div class ="rightcol"> 
         
+    </div>
+
+
+    <div class = "characterinfo">
+        <input id = "getinfo" type = "button">Load</input>
+        <p>Player Info: </p>
+        <div id = "playerinfooutput"></div>
+        <ul id = "cardoutput"></ul>
     </div>
 
     <div class = "movebutton">

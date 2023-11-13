@@ -170,3 +170,17 @@ body {
     height: 45vh;
     width: 25vw;
 }
+
+.characterinfo{
+    position: fixed;
+    width: 21.25vw;
+    left: 52.5vw;
+    height: 45vh;
+    bottom: 10vh;
+    background-color: black;
+    color: white;
+    font-size: 2.5vh;
+    font-family: 'Courier New';
+    font-weight: 700;
+    text-align: center;
+}

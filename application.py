@@ -16,9 +16,11 @@ gameRooms = {}
 
 playerList = []
 playerDict = {}
+characterPlayerDict = {}
+global testInstance
 #add a disabled characters list to disable them for people who join later
 
-cards = [
+cardCharacterList = [
     Card("Character", "Miss Scarlet"),
     Card("Character", "Col. Mustard"),
     Card("Character", "Mrs. White"),
@@ -27,6 +29,16 @@ cards = [
     Card("Character", "Prof. Plum"),
     Card("Character", "Dr. Orchid"),
     Card("Character", "Miss Peach"),
+]
+cardWeaponList =[
+    Card("Weapon", "Rope"),
+    Card("Weapon", "Lead Pipe"),
+    Card("Weapon", "Knife"),
+    Card("Weapon", "Wrench"),
+    Card("Weapon", "Candlestick"),
+    Card("Weapon", "Revolver"),
+]
+cardLocationList = [
     Card("Location", "Study"),
     Card("Location", "Hall"),
     Card("Location", "Lounge"),
@@ -36,15 +48,10 @@ cards = [
     Card("Location", "Conservatory"),
     Card("Location", "Ballroom"),
     Card("Location", "Kitchen"),
-    Card("Weapon", "Rope"),
-    Card("Weapon", "Lead Pipe"),
-    Card("Weapon", "Knife"),
-    Card("Weapon", "Wrench"),
-    Card("Weapon", "Candlestick"),
-    Card("Weapon", "Revolver"),
 ]
+    
 
-location = [
+locationList = [
     Location("Study", "Room", 2, ["Hall1", "Hall3", "Kitchen"]),
     Location("Hall1", "Hallway", 1, ["Study", "Hall"]),
     Location("Hall", "Room", 2, ["Hall1", "Hall2", "Hall4"]),
@@ -207,39 +214,43 @@ def on_game_start(data):
     roomCode = data['roomCode']
     # Start GameInstance object and replace the game's Lobby in the gameRooms hashmap
     gameRooms[roomCode] = gameRooms[roomCode].startGame()
+    locationStack = locationList
+    cardLocationStack = cardLocationList
+    cardCharacterStack = cardCharacterList
+    cardWeaponStack = cardWeaponList
+    caseFile = CaseFile(cardCharacterStack.pop(), cardWeaponStack.pop() ,cardLocationStack.pop())
+    global gameInstance 
+    gameInstance = gameRooms[roomCode]
+    gameRooms[roomCode].caseFile = caseFile
+
+    for player in gameRooms[roomCode].players:
+        player.addPlayerCard(cardLocationStack.pop())
+        player.addPlayerCard(cardCharacterStack.pop())
+        player.addPlayerCard(cardWeaponStack.pop())
+
     socketio.emit("start_game_all", {'url': url_for('testzone')}, to=roomCode)
+
+@socketio.on('request_player_info')
+def request_player_info(data):
+    player = playerDict[request.sid]
+    socketio.emit("playerinfo", {'playername': player.name, 'character': player.character}, to=request.sid)
+    playerCards = player.getPlayerCards()
+    for card in playerCards:
+        socketio.emit("playercard", {'cardtype': card.cardType, 'cardname': card.cardName}, to=request.sid)
+    
 
 @socketio.on('select_character')
 def select_character(data):
     playerDict[request.sid].selectCharacter(data['character'])
     roomCode = data['roomCode']
     player = playerDict[request.sid]
+    player.character = data['character']
     print(player.character)
     socketio.emit("disable_character", {'character': data['character']})
     
 
 @application.route('/testzone')
 def testzone():
-    global locationList
-    global ballroom
-    global billiard_room
-    global Kitchen
-    global caseFile
-    caseFile = CaseFile("Mrs. Peacock", "Knife", "Ballroom")
-    Kitchen = Location("Kitchen", "Room", 0, ["Hall10", "Hall12", "Study"])
-    billiard_room = Location("Billiard", "Room", 1, ["Hall4", "Hall6", "Hall7", "Hall9"])
-    ballroom = Location("Ballroom", "Room", 2, ["Hall9", "Hall11", "Hall12"])
-    locationList = [Kitchen, billiard_room, ballroom]
-    global testPlayer
-    testPlayer = Player("Test Player", 1)
-    testPlayer.selectCharacter("Miss Scarlet")
-    global testInstance
-    #testInstance = GameInstance(1, [testPlayer])
-    #testInstance.changePlayerLocation(1, billiard_room)
-    #print(testInstance.getPlayerLocation(1).locName)
-    global game_thread
-    #game_thread = threading.Thread(target=playgame, args=(testInstance, socketio, application, gameOver))
-    #game_thread.start()
     return render_template('testzone.html')
 
 @socketio.on('connect')
@@ -253,27 +264,24 @@ def handle_message(data):
 @application.route('/accusesubmit', methods = ['POST'])
 def accusesubmit():
     print(f"{request.form['Weapon']}, {request.form['Character']}, {request.form['Location']}")
-    caseWeapon = caseFile.weapon
-    caseSuspect = caseFile.suspect
-    caseRoom = caseFile.room
+    #caseWeapon = caseFile.weapon
+    #caseSuspect = caseFile.suspect
+    #caseRoom = caseFile.room
     accuseWeapon = request.form['Weapon']
     accuseSuspect = request.form['Character']
     accuseRoom = request.form['Location']
 
-    if accuseWeapon == caseWeapon and accuseSuspect == caseSuspect and accuseRoom == caseRoom:
-        print("Game Over!")
-    else:
-        return "0"
+    #if accuseWeapon == caseWeapon and accuseSuspect == caseSuspect and accuseRoom == caseRoom:
+    #    print("Game Over!")
+    #else:
+    #    return "0"
     
     return "1"
 
 @application.route('/movesubmit', methods = ['POST'])
 def movesubmit():
     newLocation = request.form['Location']
-    for location in locationList:
-        if location.locName == newLocation:
-            testInstance.changePlayerLocation(1, location)
-    return "1"
+
 
 @application.route('/suggestsubmit', methods = ['POST'])
 def suggestsubmit():
