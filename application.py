@@ -2,7 +2,7 @@
 # on 10/21/23.  Has been modified by Creative Engineers for the Clue-Less project.
 import random
 import string
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, url_for
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import psycopg
 from gameinfo import *
@@ -141,7 +141,7 @@ def on_create(data):
     gameRooms[roomCode] = Lobby(roomCode)
     join_room(roomCode)
     gameRooms[roomCode].addPlayer(new_player)
-    socketio.emit("room_code", {'text': roomCode})
+    socketio.emit("room_code", {'text': roomCode}, to=request.sid)
 
 #Join existing Game Room
 @socketio.on('join')
@@ -152,13 +152,29 @@ def on_join(data):
 
     room = data['roomCode']
     if room not in gameRooms:
-        socketio.emit("invalid_room_code", {'text': "Game lobby '" + room + "' does not exist.<br>Please enter a valid lobby code:"})
+        socketio.emit(
+            "invalid_room_code", 
+            {'text': "Game lobby '" + room + "' does not exist.<br>Please enter a valid lobby code:"},
+            to=request.sid
+        )
     else:
         join_room(room)
         gameRooms[room].addPlayer(new_player)
-        socketio.emit("join_conf", {'code': room, 'text': 'User has joined the room.'})
+        print(gameRooms)
+        #When other game started, updated all host pages with the new room code,
+        # but joining a game did not trigger the response on the host
+        socketio.emit("join_conf", {'code': room, 'text': 'User has joined the room.'}, to=request.sid)
         socketio.emit("players_in_lobby", {'num': gameRooms[room].getNumPlayers()}, to=room)
         socketio.emit("to_host", {'text':'Test messageNOW'}, to=gameRooms[room].players[0].sid)
+
+#Join existing Game Room
+@socketio.on('start_game')
+def on_game_start(data):
+    roomCode = data['roomCode']
+    # Start GameInstance object and replace the game's Lobby in the gameRooms hashmap
+    gameRooms[roomCode] = gameRooms[roomCode].startGame()
+    socketio.emit("start_game_all", {'url': url_for('testzone.html')}, to=roomCode)
+
 
 @application.route('/testzone')
 def test_zone():
