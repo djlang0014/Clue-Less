@@ -25,8 +25,8 @@ cards = [
     Card("Location", "Hall"),
     Card("Location", "Lounge"),
     Card("Location", "Library"),
-    Card("Location", "Billiard Room"),
-    Card("Location", "Dining Room"),
+    Card("Location", "Billiard"),
+    Card("Location", "Dining"),
     Card("Location", "Conservatory"),
     Card("Location", "Ballroom"),
     Card("Location", "Kitchen"),
@@ -185,16 +185,16 @@ def test_zone():
     global caseFile
     caseFile = CaseFile("Mrs. Peacock", "Knife", "Ballroom")
     Kitchen = Location("Kitchen", "Room", 0, ["Hall10", "Hall12", "Study"])
-    billiard_room = Location("Billiard Room", "Room", 1, ["Hall4", "Hall6", "Hall7", "Hall9"])
+    billiard_room = Location("Billiard", "Room", 1, ["Hall4", "Hall6", "Hall7", "Hall9"])
     ballroom = Location("Ballroom", "Room", 2, ["Hall9", "Hall11", "Hall12"])
     locationList = [Kitchen, billiard_room, ballroom]
     global testPlayer
     testPlayer = Player("Test Player", 1)
     testPlayer.selectCharacter("Miss Scarlet")
     global testInstance
-    testInstance = GameInstance(1, [testPlayer])
-    testInstance.changePlayerLocation(1, billiard_room)
-    print(testInstance.getPlayerLocation(1).locName)
+    #testInstance = GameInstance(1, [testPlayer])
+    #testInstance.changePlayerLocation(1, billiard_room)
+    #print(testInstance.getPlayerLocation(1).locName)
     global game_thread
     #game_thread = threading.Thread(target=playgame, args=(testInstance, socketio, application, gameOver))
     #game_thread.start()
@@ -227,7 +227,9 @@ def accusesubmit():
 
 @application.route('/movesubmit', methods = ['POST'])
 def movesubmit():
+    print("here")
     newLocation = request.form['Location']
+    print(newLocation)
     for location in locationList:
         if location.locName == newLocation:
             testInstance.changePlayerLocation(1, location)

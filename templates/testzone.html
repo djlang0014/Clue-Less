@@ -67,6 +67,11 @@
             grid-template-rows: 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh;
 
         }
+        .output {
+            margin: 0;
+            padding: 0;
+            display: none;
+        }
     </style>
     
 </head>
@@ -138,11 +143,18 @@
     </div>
 
     <div id = "moveRadio" class = "radio-list-move">
-        <form method = "post" action = "/movesubmit" target = "hidden-iframe">
+        <form method = "post" action = "/movesubmit" target = "hidden-iframe" id = "positionForm">
             <h3>Location</h3>
             <label>
                 <input type="radio" name="Location" value="Kitchen"> Kitchen
                 <input type="radio" name="Location" value="Study"> Study
+                <input type="radio" name="Location" value="Billiard"> Billiard Room
+                <input type="radio" name="Location" value="Lounge"> Lounge
+                <input type="radio" name="Location" value="Library"> Library
+                <input type="radio" name="Location" value="Conservatory"> Conservatory
+                <input type="radio" name="Location" value="Hall"> Hall
+                <input type="radio" name="Location" value="Ballroom"> Ballroom
+                <input type="radio" name="Location" value="Dining"> Dining Room
             </label>
             <input type = "submit" value = "Submit">
         </form>
@@ -162,12 +174,65 @@
         </form>
     </div>
     
+    <div class = "output">
+        <p id='output'></p>
+    </div>
+    
 
 
     <script>
+        var movingImage = document.getElementById('MrGreen');
+        var positionForm = document.getElementById('positionForm');
         var moveContainer = document.getElementById('moveRadio');
         var suggestContainer = document.getElementById('suggestRadio');
         var accuseContainer = document.getElementById('accuseRadio');
+
+        document.onmousemove=getCursorPos;
+        var output = document.getElementById('output');
+        function getCursorPos(a)
+        {
+        var posx = a.clientX;
+        var posy = a.clientY;
+        output.innerHTML="Position X: " + posx + "px & Position Y: " + posy + "px";
+        } 
+
+        var locations = {
+            study: {top:235 , left: 225},
+            Hall1: {top:215, left: 350},
+            Hall: {top:215, left: 470},
+            Hall2: {top:215, left: 610},
+            Lounge: {top:215, left: 730},
+            Hall3: {top:315, left: 225},
+            Hall4: {top:315, left: 470},
+            Hall5: {top:315, left: 730},
+            Library: {top:415, left: 225},
+            Hall6: {top:415, left:350},
+            Billiard: {top:415, left:470},
+            Hall7: {top:415, left:610},
+            Dining: {top:415, left:730},
+            Hall8: {top:540, left: 225},
+            Hall9: {top:540, left: 470},
+            Hall10: {top:540, left: 730},
+            Conservatory: {top:640, left: 225},
+            Hall11: {top:640, left: 350},
+            Ballroom: {top:640, left: 470},
+            Hall12: {top:640, left: 610},
+            Kitchen: {top:640, left: 730}
+        }
+
+        function moveImage() {
+            var selectedPosition = document.querySelector('input[name="Location"]:checked').value;
+            var newPosition = locations[selectedPosition];
+
+            movingImage.style.top = newPosition.top + "px";
+            movingImage.style.left = newPosition.left + "px";
+        }
+
+        positionForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            moveImage();
+            positionForm.submit();
+        });
 
         function showAccuseList(){
             moveContainer.style.display = "none";
@@ -210,6 +275,8 @@
                 moveContainer.style.display = "none";
             }
         }
+
+
 
     </script>
 
