@@ -55,11 +55,63 @@ class GameInstance:
 
     def getLocationList(self):
         #This will make the list of locations for the game
-        pass
+        board = {
+            'Study': {'type': 'room', 'adjacent_units': ['Hall1', 'Hall3', 'Kitchen']},
+            'Hall1': {'type': 'hallway', 'adjacent_units': ['Study', 'Hall']},
+            'Hall': {'type': 'room', 'adjacent_units': ['Hall1', 'Hall4', 'Hall2']},
+            'Hall2': {'type': 'hallway', 'adjacent_units': ['Hall', 'Lounge']},
+            'Lounge': {'type': 'room', 'adjacent_units': ['Hall2', 'Hall5', 'Conservatory']},
+            'Hall3': {'type': 'hallway', 'adjacent_units': ['Study', 'Library']},
+            'Hall4': {'type': 'hallway', 'adjacent_units': ['Hall', 'Billiard Room']},
+            'Hall5': {'type': 'hallway', 'adjacent_units': ['Lounge', 'Dining Room']},
+            'Library': {'type': 'room', 'adjacent_units': ['Hall3', 'Hall6', 'Hall8']},
+            'Hall6': {'type': 'hallway', 'adjacent_units': ['Library', 'Billiard Room']},
+            'Billiard Room': {'type': 'room', 'adjacent_units': ['Hall4', 'Hall6', 'Hall7', 'Hall9']},
+            'Hall7': {'type': 'hallway', 'adjacent_units': ['Billiard Room', 'Dining Room']},
+            'Dining Room': {'type': 'room', 'adjacent_units': ['Hall5', 'Hall7', 'Hall10']},
+            'Hall8': {'type': 'hallway', 'adjacent_units': ['Library', 'Conservatory']},
+            'Hall9': {'type': 'hallway', 'adjacent_units': ['Billiard Room', 'Ballroom']},
+            'Hall10': {'type': 'hallway', 'adjacent_units': ['Dining Room', 'Kitchen']},
+            'Conservatory': {'type': 'room', 'adjacent_units': ['Lounge', 'Hall8', 'Hall11']},
+            'Hall11': {'type': 'hallway', 'adjacent_units': ['Conservatory', 'Ballroom']},
+            'Ballroom': {'type': 'room', 'adjacent_units': ['Hall9', 'Hall11', 'Hall12']},
+            'Hall12': {'type': 'hallway', 'adjacent_units': ['Ballroom', 'Kitchen']},
+            'Kitchen': {'type': 'room', 'adjacent_units': ['Study', 'Hall10', 'Hall12']},
+            }
+        return board
     
     def changePlayerLocation(self, playerID, location):
-        self.playerLocations[playerID] = location
+        board = self.getLocationList()
+
+        # call self.getPlayerLocation and retrieve player location
+        # for the purpose of testing, assume they are located in the Kitchen
+        potential_locations = self.find_available_locations(board, 'Kitchen')
+
+        # Convert to dict for easy lookup
+        potential_locations = dict(potential_locations)
+
+        if location in potential_locations :
+            self.playerLocations[playerID] = location
+        else :
+            return 0
         pass
 
+    @staticmethod
+    def find_available_locations(board, current_location):
+        adjacent_units = board.get(current_location, {}).get('adjacent_units', [])
+        adjacent_locations = []
+
+        if adjacent_units:
+            for unit in adjacent_units:
+                unit_info = board.get(unit, {})
+                if unit_info:
+                    adjacent_locations.append((unit, unit_info.get('type')))
+        
+        # this creates a new list of tuples that represents all available locations (omits locations that are hallways for now)
+        # Ideally would retrieve that info from database
+        adjacent_locations = [(location, type) for location, type in adjacent_units if type != 'hallway']
+        return adjacent_locations
+        
+    
     def getPlayerLocation(self, playerID):
         return self.playerLocations[playerID]
