@@ -23,7 +23,7 @@ class Location:
         pass
 
 class Player:
-    def __init__(self, name):
+    def __init__(self, name, playerID = None):
         self.name = name
         self.playerID = None
         self.character = None

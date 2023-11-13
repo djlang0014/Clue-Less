@@ -2,11 +2,15 @@
 # on 10/21/23.  Has been modified by Creative Engineers for the Clue-Less project.
 import random
 import string
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import psycopg
 from gamelogic import Lobby, GameInstance
 from gameinfo import Player
+from gameinfo import *
+from gamelogic import *
+import threading
+
 
 ROOM_CODE_CHARS = string.ascii_lowercase + string.digits
 
@@ -132,6 +136,68 @@ def on_join(data):
         gameRooms[room].addPlayer(new_player)
         socketio.emit("join_conf", {'code': room, 'text': 'User has joined the room.'})
         socketio.emit("players_in_lobby", {'num': gameRooms[room].getNumPlayers()})
+
+@application.route('/testzone')
+def test_zone():
+    global locationList
+    global ballroom
+    global billiard_room
+    global Kitchen
+    global caseFile
+    caseFile = CaseFile("Mrs. Peacock", "Knife", "Ballroom")
+    Kitchen = Location("Kitchen", "Room", 0, ["Hall10", "Hall12", "Study"])
+    billiard_room = Location("Billiard Room", "Room", 1, ["Hall4", "Hall6", "Hall7", "Hall9"])
+    ballroom = Location("Ballroom", "Room", 2, ["Hall9", "Hall11", "Hall12"])
+    locationList = [Kitchen, billiard_room, ballroom]
+    global testPlayer
+    testPlayer = Player("Test Player", 1)
+    testPlayer.selectCharacter("Miss Scarlet")
+    global testInstance
+    testInstance = GameInstance(1, [testPlayer])
+    testInstance.changePlayerLocation(1, billiard_room)
+    print(testInstance.getPlayerLocation(1).locName)
+    global game_thread
+    #game_thread = threading.Thread(target=playgame, args=(testInstance, socketio, application, gameOver))
+    #game_thread.start()
+    return render_template('testzone.html')
+
+@socketio.on('connect')
+def test_connect():
+    socketio.emit('after connect', {'data':'Connected to Flask Socket.'})
+
+@socketio.on('message')
+def handle_message(data):
+    print('received message: ' + data)
+
+@application.route('/accusesubmit', methods = ['POST'])
+def accusesubmit():
+    print(f"{request.form['Weapon']}, {request.form['Character']}, {request.form['Location']}")
+    caseWeapon = caseFile.weapon
+    caseSuspect = caseFile.suspect
+    caseRoom = caseFile.room
+    accuseWeapon = request.form['Weapon']
+    accuseSuspect = request.form['Character']
+    accuseRoom = request.form['Location']
+
+    if accuseWeapon == caseWeapon and accuseSuspect == caseSuspect and accuseRoom == caseRoom:
+        print("Game Over!")
+    else:
+        return "0"
+    
+    return "1"
+
+@application.route('/movesubmit', methods = ['POST'])
+def movesubmit():
+    newLocation = request.form['Location']
+    for location in locationList:
+        if location.locName == newLocation:
+            testInstance.changePlayerLocation(1, location)
+    return "1"
+
+@application.route('/suggestsubmit', methods = ['POST'])
+def suggestsubmit():
+    print(f"{request.form['Weapon']}, {request.form['Character']}")
+    return "1"
 
 ####################################################
 # Messages for ClueLess
