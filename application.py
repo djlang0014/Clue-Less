@@ -158,7 +158,7 @@ def on_join(data):
         gameRooms[room].addPlayer(new_player)
         socketio.emit("join_conf", {'code': room, 'text': 'User has joined the room.'})
         socketio.emit("players_in_lobby", {'num': gameRooms[room].getNumPlayers()}, to=room)
-        socketio.emit("to_host", {'text':'Test messageNOW'}, to=gameRooms[room].players[0])
+        socketio.emit("to_host", {'text':'Test messageNOW'}, to=gameRooms[room].players[0].sid)
 
 @application.route('/testzone')
 def test_zone():
