@@ -5,8 +5,6 @@ import string
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import psycopg
-from gamelogic import Lobby, GameInstance
-from gameinfo import Player
 from gameinfo import *
 from gamelogic import *
 import threading
@@ -15,6 +13,30 @@ import threading
 ROOM_CODE_CHARS = string.ascii_lowercase + string.digits
 
 gameRooms = {}
+
+cards = [
+    Card("Character", "Miss Scarlet"),
+    Card("Character", "Col. Mustard"),
+    Card("Character", "Mrs. White"),
+    Card("Character", "Mr. Green"),
+    Card("Character", "Mrs. Peacock"),
+    Card("Character", "Prof. Plum"),
+    Card("Location", "Study"),
+    Card("Location", "Hall"),
+    Card("Location", "Lounge"),
+    Card("Location", "Library"),
+    Card("Location", "Billiard Room"),
+    Card("Location", "Dining Room"),
+    Card("Location", "Conservatory"),
+    Card("Location", "Ballroom"),
+    Card("Location", "Kitchen"),
+    Card("Weapon", "Rope"),
+    Card("Weapon", "Lead Pipe"),
+    Card("Weapon", "Knife"),
+    Card("Weapon", "Wrench"),
+    Card("Weapon", "Candlestick"),
+    Card("Weapon", "Revolver"),
+]
 
 characters = ["Miss Scarlet", "Prof. Plum", "Mrs. Peacock", "Mr. Green",
               "Mrs. White", "Col. Mustard"]
@@ -135,7 +157,7 @@ def on_join(data):
         join_room(room)
         gameRooms[room].addPlayer(new_player)
         socketio.emit("join_conf", {'code': room, 'text': 'User has joined the room.'})
-        socketio.emit("players_in_lobby", {'num': gameRooms[room].getNumPlayers()})
+        socketio.emit("players_in_lobby", {'num': gameRooms[room].getNumPlayers()}, to=room)
 
 @application.route('/testzone')
 def test_zone():

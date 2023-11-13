@@ -51,7 +51,7 @@ class Player:
         return self.name
 
 class Card:
-    def __init__(self, cardType, cardName, cardID):
+    def __init__(self, cardType, cardName, cardID=None):
         self.cardType = cardType
         self.cardName = cardName
         self.cardID = cardID
