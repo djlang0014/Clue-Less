@@ -2,11 +2,9 @@
 # on 10/21/23.  Has been modified by Creative Engineers for the Clue-Less project.
 import random
 import string
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, url_for
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import psycopg
-from gamelogic import Lobby, GameInstance
-from gameinfo import Player
 from gameinfo import *
 from gamelogic import *
 import threading
@@ -15,6 +13,60 @@ import threading
 ROOM_CODE_CHARS = string.ascii_lowercase + string.digits
 
 gameRooms = {}
+
+playerList = []
+playerDict = {}
+#add a disabled characters list to disable them for people who join later
+
+cards = [
+    Card("Character", "Miss Scarlet"),
+    Card("Character", "Col. Mustard"),
+    Card("Character", "Mrs. White"),
+    Card("Character", "Mr. Green"),
+    Card("Character", "Mrs. Peacock"),
+    Card("Character", "Prof. Plum"),
+    Card("Character", "Dr. Orchid"),
+    Card("Character", "Miss Peach"),
+    Card("Location", "Study"),
+    Card("Location", "Hall"),
+    Card("Location", "Lounge"),
+    Card("Location", "Library"),
+    Card("Location", "Billiard"),
+    Card("Location", "Dining"),
+    Card("Location", "Conservatory"),
+    Card("Location", "Ballroom"),
+    Card("Location", "Kitchen"),
+    Card("Weapon", "Rope"),
+    Card("Weapon", "Lead Pipe"),
+    Card("Weapon", "Knife"),
+    Card("Weapon", "Wrench"),
+    Card("Weapon", "Candlestick"),
+    Card("Weapon", "Revolver"),
+]
+
+location = [
+    Location("Study", "Room", 2, ["Hall1", "Hall3", "Kitchen"]),
+    Location("Hall1", "Hallway", 1, ["Study", "Hall"]),
+    Location("Hall", "Room", 2, ["Hall1", "Hall2", "Hall4"]),
+    Location("Hall2", "Hallway", 1, ["Hall", "Lounge"]),
+    Location("Lounge", "Room", 2, ["Hall3", "Hall5", "Conservatory"]),
+    Location("Hall3", "Hallway", 1, ["Study", "Library"]),
+    Location("Hall4", "Hallway", 1, ["Hall", "Billiard"]),
+    Location("Hall5", "Hallway", 1, ["Lounge", "Dining"]),
+    Location("Libary", "Room", 2, ["Hall3", "Hall6", "Hall8"]),
+    Location("Hall6", "Hallway", 1, ["Billiard", "Library"]),
+    Location("Billiard", "Room", 2, ["Hall4", "Hall6", "Hall7", "Hall9"]),
+    Location("Hall7", "Hallway", 1, ["Billiard", "Dining"]),
+    Location("Dining", "Room", 2, ["Hall5", "Hall7", "Hall10"]),
+    Location("Hall8", "Hallway", 1, ["Library", "Conservatory"]),
+    Location("Hall9", "Hallway", 1, ["Billiard", "Ballroom"]),
+    Location("Hall10", "Hallway", 1, ["Dining", "Kitchen"]),
+    Location("Conservatory", "Room", 2, ["Hall8", "Hall11", "Lounge"]),
+    Location("Hall11", "Hallway", 1, ["Conservatory", "Ballroom"]),
+    Location("Ballroom", "Room", 2, ["Hall9", "Hall11", "Hall12"]),
+    Location("Hall12", "Hallway", 1, ["Ballroom", "Kitchen"]),
+    Location("Kitchen", "Room", 2, ["Hall10", "Hall12", "Study"]),
+]
 
 characters = ["Miss Scarlet", "Prof. Plum", "Mrs. Peacock", "Mr. Green",
               "Mrs. White", "Col. Mustard"]
@@ -107,8 +159,9 @@ def handle_message(data):
 def on_create(data):
     username = data['username']
     #Create new player
-    new_player = Player(username)
-
+    new_player = Player(username, request.sid)
+    playerList.append(new_player)
+    playerDict[request.sid] = new_player
     #Create unique game/roomCode
     while True:
         roomCode = ''.join(random.choice(ROOM_CODE_CHARS) for i in range(6))
@@ -119,26 +172,54 @@ def on_create(data):
     gameRooms[roomCode] = Lobby(roomCode)
     join_room(roomCode)
     gameRooms[roomCode].addPlayer(new_player)
-    socketio.emit("room_code", {'text': roomCode})
+    socketio.emit("room_code", {'text': roomCode}, to=request.sid)
 
 #Join existing Game Room
 @socketio.on('join')
 def on_join(data):
     username = data['username']
     #Create new player
-    new_player = Player(username)
+    new_player = Player(username, request.sid)
+    playerList.append(new_player)
+    playerDict[request.sid] = new_player
+    
 
     room = data['roomCode']
     if room not in gameRooms:
-        socketio.emit("invalid_room_code", {'text': "Game lobby '" + room + "' does not exist.<br>Please enter a valid lobby code:"})
+        socketio.emit(
+            "invalid_room_code", 
+            {'text': "Game lobby '" + room + "' does not exist.<br>Please enter a valid lobby code:"},
+            to=request.sid
+        )
     else:
         join_room(room)
         gameRooms[room].addPlayer(new_player)
-        socketio.emit("join_conf", {'code': room, 'text': 'User has joined the room.'})
-        socketio.emit("players_in_lobby", {'num': gameRooms[room].getNumPlayers()})
+
+        #When other game started, updated all host pages with the new room code,
+        # but joining a game did not trigger the response on the host
+        socketio.emit("join_conf", {'code': room, 'text': 'User has joined the room.'}, to=request.sid)
+        socketio.emit("players_in_lobby", {'num': gameRooms[room].getNumPlayers()}, to=room)
+        socketio.emit("to_host", {'text':'Test messageNOW'}, to=gameRooms[room].players[0].sid)
+
+#Join existing Game Room
+@socketio.on('start_game')
+def on_game_start(data):
+    roomCode = data['roomCode']
+    # Start GameInstance object and replace the game's Lobby in the gameRooms hashmap
+    gameRooms[roomCode] = gameRooms[roomCode].startGame()
+    socketio.emit("start_game_all", {'url': url_for('testzone')}, to=roomCode)
+
+@socketio.on('select_character')
+def select_character(data):
+    playerDict[request.sid].selectCharacter(data['character'])
+    roomCode = data['roomCode']
+    player = playerDict[request.sid]
+    print(player.character)
+    socketio.emit("disable_character", {'character': data['character']})
+    
 
 @application.route('/testzone')
-def test_zone():
+def testzone():
     global locationList
     global ballroom
     global billiard_room
@@ -146,16 +227,16 @@ def test_zone():
     global caseFile
     caseFile = CaseFile("Mrs. Peacock", "Knife", "Ballroom")
     Kitchen = Location("Kitchen", "Room", 0, ["Hall10", "Hall12", "Study"])
-    billiard_room = Location("Billiard Room", "Room", 1, ["Hall4", "Hall6", "Hall7", "Hall9"])
+    billiard_room = Location("Billiard", "Room", 1, ["Hall4", "Hall6", "Hall7", "Hall9"])
     ballroom = Location("Ballroom", "Room", 2, ["Hall9", "Hall11", "Hall12"])
     locationList = [Kitchen, billiard_room, ballroom]
     global testPlayer
     testPlayer = Player("Test Player", 1)
     testPlayer.selectCharacter("Miss Scarlet")
     global testInstance
-    testInstance = GameInstance(1, [testPlayer])
-    testInstance.changePlayerLocation(1, billiard_room)
-    print(testInstance.getPlayerLocation(1).locName)
+    #testInstance = GameInstance(1, [testPlayer])
+    #testInstance.changePlayerLocation(1, billiard_room)
+    #print(testInstance.getPlayerLocation(1).locName)
     global game_thread
     #game_thread = threading.Thread(target=playgame, args=(testInstance, socketio, application, gameOver))
     #game_thread.start()
@@ -198,6 +279,10 @@ def movesubmit():
 def suggestsubmit():
     print(f"{request.form['Weapon']}, {request.form['Character']}")
     return "1"
+
+
+
+
 
 ####################################################
 # Messages for ClueLess

@@ -39,6 +39,16 @@
                 document.getElementById("username").value = "";
             }
 
+            // Button was clicked
+            document.getElementById("charactersubmit").onclick = function() {
+                event.preventDefault();
+                var charname = document.querySelector('input[name="Character"]:checked').value;
+                roomCode = document.getElementById("code").innerHTML
+                document.getElementById("player-form").style.display = "none";
+                document.getElementById("afterselection").style.display = "block";
+                socket.emit('select_character', {'character':charname, 'roomCode':roomCode})
+            }
+
             // Invalid Join code message from server
             socket.on('invalid_room_code', function(data) {
                 var text = data['text'];
@@ -62,6 +72,15 @@
                 document.getElementById("num-players").innerHTML = num;
             });  
 
+            socket.on('start_game_all', function(data) {
+                window.location = data.url
+            });
+
+            socket.on('disable_character', function(data){
+                document.getElementById(data.character).disabled = true;
+                
+            });
+
         });
     </script>
 
@@ -75,7 +94,7 @@
             <input type="text" id="username" name="username"><br>
             <label for="join-code" class="game-text" id="lobby-code">Please enter the lobby code: </label><br>
             <input id="join-code" type="text" name="join-code"><br>
-            <input id="join" type="submit" value="join Lobby"/>
+            <input id="join" type="submit" value="join Lobby" class="game-text" style="color: #000;" />
         </div>    
         <div id="lobby-tracker" style="display:none">
             <p class="game-text">The number of players in the lobby is:</p>
@@ -84,15 +103,27 @@
     </div>
     <br>           
     <div id="player-form" class="menu-container" style="display:none; text-align:left">
-        <form>
+        <form id = "selection">
             <p  class="game-text">Please choose a character:</p>
-            {% for character in character_list %}
-                <input type="radio" id="{{character}}" name="player_character" value="{{character}}">
-                <label for="{{character}}" class="game-text">{{character}}</label><br>
-            {% endfor %}
-            <input id="submit-player-form" type="submit" value="Register Player"/>    
+            <label class = "game-text">
+                <input type="radio" name="Character" value="Miss Scarlet" id = "Miss Scarlet"> Miss Scarlet
+                <input type="radio" name="Character" value="Mrs. Peacock" id = "Mrs. Peacock"> Mrs. Peacock 
+                <input type="radio" name="Character" value="Mrs. White"  id = "Mrs. White"> Mrs. White 
+                <input type="radio" name="Character" value="Col Mustard"  id = "Col Mustard"> Col. Mustard 
+                <input type="radio" name="Character" value="Mr. Green"  id = "Mr. Green"> Mr. Green
+                <input type="radio" name="Character" value="Prof Plum"  id = "Prof Plum"> Prof Plum 
+                <input type="radio" name="Character" value="Dr. Orchid"  id = "Dr. Orchid"> Dr. Orchid 
+                <input type="radio" name="Character" value="Miss Peach"  id = "Miss Peach"> Miss Peach 
+            </label>
+            <input id="charactersubmit" type="submit" value="Register Character" class="game-text" style="color: #000;" />    
         </form> 
     </div> 
 
+    <div id = "afterselection" class = "menu-container" style="display:none;">
+        <p class = "game-text">You have selected a character</p>
+    </div>
+
+
+ 
 </body>
 </html>

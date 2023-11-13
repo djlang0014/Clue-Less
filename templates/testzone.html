@@ -24,6 +24,7 @@
                 // Set the textfield input to empty
                 document.getElementById("textfield_input1").value = "";
             }
+
             // Message recieved from server
             socket.on('message_from_server', function(data) {
                 var text = data['text'];
@@ -35,6 +36,7 @@
     </script>
 
     <style>
+
         .radio-list-accuse{
             position: relative;
             left: 52.5vw;
@@ -65,6 +67,19 @@
             grid-template-rows: 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh;
 
         }
+        .endTurnContainer{
+            position: fixed;
+            left:52.5vw;
+            width:30vw;
+            height: 90vh;
+            display: none;
+        }
+        .output {
+            margin: 0;
+            padding: 0;
+            display: none;
+        }
+
     </style>
     
 </head>
@@ -73,7 +88,12 @@
 
     </div>
     <div class ="wrapper">
-
+        <div class="green" id="MrGreen" style="top: 680px; left: 330px;"></div>
+        <div class="red"  style="top: 180px; left: 590px;"></div>
+        <div class="blue"  style="top: 550px; left: 170px;"></div>
+        <div class="purple"  style="top: 310px; left: 170px;"></div>
+        <div class="white"  style="top: 680px; left: 590px;"></div>
+        <div class="yellow"  style="top: 310px; left: 750px;"></div>
     </div>
     <div class ="rightcol"> 
         
@@ -92,6 +112,14 @@
         <button onclick = "showAccuseList()">Accuse</button>
     </div>
 
+    <div class = "endbutton">
+        <button onclick = "showEndTurn()">End Turn</button>
+    </div>
+
+    <div id = "serverchat" class = "serverchat">
+        <textarea id="chat" style="width: 450px; height: 750px; font-size: 18px; font-family: monospace; margin-top: 10px;"></textarea>
+    </div>
+
     <div id = "accuseRadio" class = "radio-list-accuse">
         <form method = "post" action = "/accusesubmit" target = "hidden-iframe">
             <h3>Weapon</h3>
@@ -108,9 +136,9 @@
                 <input type="radio" name="Character" value="Miss Scarlet"> Miss Scarlet
                 <input type="radio" name="Character" value="Mrs. Peacock"> Mrs. Peacock 
                 <input type="radio" name="Character" value="Mrs. White"> Mrs. White 
-                <input type="radio" name="Character" value="Colonel Mustard"> Colonel Mustard 
-                <input type="radio" name="Character" value="Reverend Green"> Reverend Green
-                <input type="radio" name="Character" value="Professor Plum"> Professor Plum 
+                <input type="radio" name="Character" value="Col Mustard"> Col. Mustard 
+                <input type="radio" name="Character" value="Mr. Green"> Mr. Green
+                <input type="radio" name="Character" value="Prof Plum"> Prof Plum 
                 <input type="radio" name="Character" value="Dr. Orchid"> Dr. Orchid 
                 <input type="radio" name="Character" value="Miss Peach"> Miss Peach 
             </label>
@@ -131,40 +159,120 @@
     </div>
 
     <div id = "moveRadio" class = "radio-list-move">
-        <form method = "post" action = "/movesubmit" target = "hidden-iframe">
+        <form method = "post" action = "/movesubmit" target = "hidden-iframe" id = "positionForm">
             <h3>Location</h3>
             <label>
                 <input type="radio" name="Location" value="Kitchen"> Kitchen
                 <input type="radio" name="Location" value="Study"> Study
-            </label>
-            <input type = "submit" value = "Submit">
-        </form>
-    </div>
-
-    <div id = "suggestRadio" class = "radio-list-suggest">
-        <form method = "post" action = "/suggestsubmit" target = "hidden-iframe">
-            <h3>Weapon</h3>
-            <label>
-                <input type="radio" name="Weapon" value="Candlestick"> Candlestick
-            </label>
-            <h3>Character</h3>
-            <label>
-                <input type="radio" name="Character" value="Miss Scarlet"> Miss Scarlet
+                <input type="radio" name="Location" value="Billiard"> Billiard Room
+                <input type="radio" name="Location" value="Lounge"> Lounge
+                <input type="radio" name="Location" value="Library"> Library
+                <input type="radio" name="Location" value="Conservatory"> Conservatory
+                <input type="radio" name="Location" value="Hall"> Hall
+                <input type="radio" name="Location" value="Ballroom"> Ballroom
+                <input type="radio" name="Location" value="Dining"> Dining Room
             </label>
             <input type = "submit" value = "Submit">
         </form>
     </div>
     
+    <div id = "suggestRadio" class = "radio-list-suggest">
+        <form method = "post" action = "/suggestsubmit" target = "hidden-iframe">
+            <h3>Weapon</h3>
+            <label>
+                <input type="radio" name="Weapon" value="Candlestick"> Candlestick
+                <input type="radio" name="Weapon" value="Knife"> Knife
+                <input type="radio" name="Weapon" value="Revolver"> Revolver
+                <input type="radio" name="Weapon" value="Lead Pipe"> Lead Pipe
+                <input type="radio" name="Weapon" value="Wrench"> Wrench
+                <input type="radio" name="Weapon" value="Rope"> Rope
+            </label>
+            <h3>Character</h3>
+            <label>
+                <input type="radio" name="Character" value="Miss Scarlet"> Miss Scarlet
+                <input type="radio" name="Character" value="Mrs. Peacock"> Mrs. Peacock 
+                <input type="radio" name="Character" value="Mrs. White"> Mrs. White 
+                <input type="radio" name="Character" value="Col Mustard"> Col. Mustard 
+                <input type="radio" name="Character" value="Mr. Green"> Mr. Green
+                <input type="radio" name="Character" value="Prof Plum"> Prof Plum 
+                <input type="radio" name="Character" value="Dr. Orchid"> Dr. Orchid 
+                <input type="radio" name="Character" value="Miss Peach"> Miss Peach 
+            </label>
+            <input type = "submit" value = "Submit">
+        </form>
+    </div>
+
+    <div id = "endTurnContainer" class = "endTurnContainer">
+        <form method = "post" action = "/endturnsubmit" target = "hidden-iframe">
+            <h1>Are you sure?</h1>
+            <input type = "submit" value = "End Turn">
+        </form>
+    
+    <div class = "output">
+        <p id='output'></p>
+    </div>
+    
 
 
     <script>
+        var movingImage = document.getElementById('MrGreen');
+        var positionForm = document.getElementById('positionForm');
         var moveContainer = document.getElementById('moveRadio');
         var suggestContainer = document.getElementById('suggestRadio');
         var accuseContainer = document.getElementById('accuseRadio');
+        var endTurnContainer = document.getElementById('endTurnContainer');
+
+        document.onmousemove=getCursorPos;
+        var output = document.getElementById('output');
+        function getCursorPos(a)
+        {
+        var posx = a.clientX;
+        var posy = a.clientY;
+        output.innerHTML="Position X: " + posx + "px & Position Y: " + posy + "px";
+        } 
+
+        var locations = {
+            study: {top:235 , left: 225},
+            Hall1: {top:215, left: 350},
+            Hall: {top:215, left: 470},
+            Hall2: {top:215, left: 610},
+            Lounge: {top:215, left: 730},
+            Hall3: {top:315, left: 225},
+            Hall4: {top:315, left: 470},
+            Hall5: {top:315, left: 730},
+            Library: {top:415, left: 225},
+            Hall6: {top:415, left:350},
+            Billiard: {top:415, left:470},
+            Hall7: {top:415, left:610},
+            Dining: {top:415, left:730},
+            Hall8: {top:540, left: 225},
+            Hall9: {top:540, left: 470},
+            Hall10: {top:540, left: 730},
+            Conservatory: {top:640, left: 225},
+            Hall11: {top:640, left: 350},
+            Ballroom: {top:640, left: 470},
+            Hall12: {top:640, left: 610},
+            Kitchen: {top:640, left: 730}
+        }
+
+        function moveImage() {
+            var selectedPosition = document.querySelector('input[name="Location"]:checked').value;
+            var newPosition = locations[selectedPosition];
+
+            movingImage.style.top = newPosition.top + "px";
+            movingImage.style.left = newPosition.left + "px";
+        }
+
+        positionForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            moveImage();
+            positionForm.submit();
+        });
 
         function showAccuseList(){
             moveContainer.style.display = "none";
             suggestContainer.style.display = "none";
+            endTurnContainer.style.display = "none";
 
             if(accuseContainer.style.display === "none")
             {
@@ -179,6 +287,7 @@
         function showSuggestList(){
             moveContainer.style.display = "none";
             accuseContainer.style.display = "none";
+            endTurnContainer.style.display = "none";
 
             if(suggestContainer.style.display === "none")
             {
@@ -193,6 +302,7 @@
         function showMoveList(){
             suggestContainer.style.display = "none";
             accuseContainer.style.display = "none";
+            endTurnContainer.style.display = "none";
 
             if(moveContainer.style.display === "none")
             {
@@ -203,6 +313,28 @@
                 moveContainer.style.display = "none";
             }
         }
+
+        function showEndTurn(){
+            suggestContainer.style.display = "none";
+            accuseContainer.style.display = "none";
+            moveContainer.style.display = "none";
+
+            if(endTurnContainer.style.display === "none")
+            {
+                endTurnContainer.style.display = "grid";
+            }
+            else
+            {
+                endTurnContainer.style.display = "none";
+            }
+
+        }
+
+        function updateLocationsAndRadioButtons(){
+            fetch('/getlocations')
+        }
+
+
 
     </script>
 
