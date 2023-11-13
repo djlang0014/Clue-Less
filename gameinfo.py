@@ -13,7 +13,9 @@ class Location:
 
     def removeCharacterPresent(self, character):
         self.charactersPresent.remove(character)
-
+    
+    def checkAccess(self):
+        pass
     def checkBoard(self):
         pass
 
@@ -21,9 +23,9 @@ class Location:
         pass
 
 class Player:
-    def __init__(self, name, playerID):
+    def __init__(self, name):
         self.name = name
-        self.playerID = playerID
+        self.playerID = None
         self.character = None
         self.cards = [] #Cards will be set in driver code
         self.maySuggest = True
@@ -44,6 +46,9 @@ class Player:
     def getPlayerCards(self):
         #This will return the cards the player has
         pass
+
+    def getPlayerName(self):
+        return self.name
 
 class Card:
     def __init__(self, cardType, cardName, cardID):
@@ -68,10 +73,11 @@ class DBAccess:
         pass
 
 class CaseFile:
-    def __init__(self):
-        self.suspect = None
-        self.weapon = None
-        self.room = None
+    def __init__(self, suspect, weapon, room):
+        #This will actually be generated in generateCaseFile, but I'm putting it here for testing
+        self.suspect = suspect
+        self.weapon = weapon
+        self.room = room
 
     def generateCaseFile(self, GameInstance):
         #This will generate the case file for the game

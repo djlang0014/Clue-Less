@@ -1,0 +1,211 @@
+<!-- templates/main_menu.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="static/gameplaytest.css">
+
+    <script>
+        var socket;            
+        $(document).ready(function() {
+            // The http vs. https is important. Use http for localhost!
+            socket = io.connect('http://' + document.domain + ':' + location.port);
+
+            // Button was clicked
+            document.getElementById("send_button1").onclick = function() {
+                // Get the text value
+                var text = document.getElementById("textfield_input1").value;
+
+                // Update the chat window
+                document.getElementById("chat").innerHTML += "You: " + text + "\n\n";                    
+                
+                // Emit a message to the 'send_message' socket
+                socket.emit('send_message', {'text':text}, 1);
+
+                // Set the textfield input to empty
+                document.getElementById("textfield_input1").value = "";
+            }
+            // Message recieved from server
+            socket.on('message_from_server', function(data) {
+                var text = data['text'];
+                document.getElementById("chat").innerHTML += "Server: " + text + "\n\n";   
+            });
+
+        });
+
+    </script>
+
+    <style>
+        .radio-list-accuse{
+            position: relative;
+            left: 52.5vw;
+            width: 45vw;
+            height: 90vh;
+            display: none;
+            grid-template-columns: 15vw 15vw 15vw;
+            grid-template-rows: 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh;
+        }
+
+        .radio-list-move{
+            position: fixed;
+            left: 52.5vw;
+            width: 15vw;
+            height: 90vh;
+            display: none;
+            grid-template-columns: 15vw;
+            grid-template-rows: 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh;
+
+        }
+        .radio-list-suggest{
+            position: fixed;
+            left: 52.5vw;
+            width: 30vw;
+            height: 90vh;
+            display: none;
+            grid-template-columns: 15vw 15vw;
+            grid-template-rows: 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh;
+
+        }
+    </style>
+    
+</head>
+<body>
+    <div class ="leftcol"> 
+
+    </div>
+    <div class ="wrapper">
+
+    </div>
+    <div class ="rightcol"> 
+        
+    </div>
+
+    <div class = "movebutton">
+        <!--This will have to be changed to selecting the location to move to-->
+        <button onclick = "showMoveList()">Move</button>
+    </div>
+
+    <div class = "suggestbutton">
+        <button onclick = "showSuggestList()">Suggest</button>
+    </div>
+
+    <div class = "accusebutton">
+        <button onclick = "showAccuseList()">Accuse</button>
+    </div>
+
+    <div id = "accuseRadio" class = "radio-list-accuse">
+        <form method = "post" action = "/accusesubmit" target = "hidden-iframe">
+            <h3>Weapon</h3>
+            <label>
+                <input type="radio" name="Weapon" value="Candlestick"> Candlestick
+                <input type="radio" name="Weapon" value="Knife"> Knife
+                <input type="radio" name="Weapon" value="Revolver"> Revolver
+                <input type="radio" name="Weapon" value="Lead Pipe"> Lead Pipe
+                <input type="radio" name="Weapon" value="Wrench"> Wrench
+                <input type="radio" name="Weapon" value="Rope"> Rope
+            </label>
+            <h3>Character</h3>
+            <label>
+                <input type="radio" name="Character" value="Miss Scarlet"> Miss Scarlet
+                <input type="radio" name="Character" value="Mrs. Peacock"> Mrs. Peacock 
+                <input type="radio" name="Character" value="Mrs. White"> Mrs. White 
+                <input type="radio" name="Character" value="Colonel Mustard"> Colonel Mustard 
+                <input type="radio" name="Character" value="Reverend Green"> Reverend Green
+                <input type="radio" name="Character" value="Professor Plum"> Professor Plum 
+                <input type="radio" name="Character" value="Dr. Orchid"> Dr. Orchid 
+                <input type="radio" name="Character" value="Miss Peach"> Miss Peach 
+            </label>
+            <h3>Location</h3>
+            <label>
+                <input type="radio" name="Location" value="Kitchen"> Kitchen
+                <input type="radio" name="Location" value="Study"> Study
+                <input type="radio" name="Location" value="Billiard Room"> Billiard Room
+                <input type="radio" name="Location" value="Lounge"> Lounge
+                <input type="radio" name="Location" value="Library"> Library
+                <input type="radio" name="Location" value="Conservatory"> Conservatory
+                <input type="radio" name="Location" value="Hall"> Hall
+                <input type="radio" name="Location" value="Ballroom"> Ballroom
+                <input type="radio" name="Location" value="Dining Room"> Dining Room
+            </label>
+            <input type = "submit" value = "Submit">
+        </form>
+    </div>
+
+    <div id = "moveRadio" class = "radio-list-move">
+        <form method = "post" action = "/movesubmit" target = "hidden-iframe">
+            <h3>Location</h3>
+            <label>
+                <input type="radio" name="Location" value="Kitchen"> Kitchen
+                <input type="radio" name="Location" value="Study"> Study
+            </label>
+            <input type = "submit" value = "Submit">
+        </form>
+    </div>
+
+    <div id = "suggestRadio" class = "radio-list-suggest">
+        <form method = "post" action = "/suggestsubmit" target = "hidden-iframe">
+            <h3>Weapon</h3>
+            <label>
+                <input type="radio" name="Weapon" value="Candlestick"> Candlestick
+            </label>
+            <h3>Character</h3>
+            <label>
+                <input type="radio" name="Character" value="Miss Scarlet"> Miss Scarlet
+            </label>
+            <input type = "submit" value = "Submit">
+        </form>
+    </div>
+    
+
+
+    <script>
+        var moveContainer = document.getElementById('moveRadio');
+        var suggestContainer = document.getElementById('suggestRadio');
+        var accuseContainer = document.getElementById('accuseRadio');
+
+        function showAccuseList(){
+            moveContainer.style.display = "none";
+            suggestContainer.style.display = "none";
+
+            if(accuseContainer.style.display === "none")
+            {
+                accuseContainer.style.display = "grid";
+            }
+            else
+            {
+                accuseContainer.style.display = "none";
+            }
+        }
+
+        function showSuggestList(){
+            moveContainer.style.display = "none";
+            accuseContainer.style.display = "none";
+
+            if(suggestContainer.style.display === "none")
+            {
+                suggestContainer.style.display = "grid";
+            }
+            else
+            {
+                suggestContainer.style.display = "none";
+            }
+        }
+
+        function showMoveList(){
+            suggestContainer.style.display = "none";
+            accuseContainer.style.display = "none";
+
+            if(moveContainer.style.display === "none")
+            {
+                moveContainer.style.display = "grid";
+            }
+            else
+            {
+                moveContainer.style.display = "none";
+            }
+        }
+
+    </script>
+
+    <iframe name = "hidden-iframe" style = "display:none"></iframe>
+</body>
+</html>

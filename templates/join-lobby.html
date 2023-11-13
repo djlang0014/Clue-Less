@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Game</title>
+    <link rel="stylesheet" type="text/css" href="static/style.css">
+
+    <!-- Link to the socket.io info -->
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.4.2.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.0/socket.io.js"></script>
+
+    <!-- Script to handle socket.io -->
+    <script>
+        var socket;            
+        $(document).ready(function() {
+            // The http vs. https is important. Use http for localhost!
+            socket = io.connect('http://' + document.domain + ':' + location.port);
+
+            // Button was clicked
+            // document.getElementById("create").onclick = function() {
+                                
+            //     // Emit a message to the 'create' socket
+            //     socket.emit('create');
+            // }
+
+            // Button was clicked
+            document.getElementById("join").onclick = function() {
+                // Get the text value
+                var text = document.getElementById("join-code").value;
+
+                // Update the chat window
+                // document.getElementById("chat").innerHTML += "You: " + text + "\n\n";                    
+                
+                // Emit a message to the 'join socket and create player
+                var name = document.getElementById("username").value;
+                socket.emit('join', {'roomCode':text, 'username': name});
+
+                // Set the textfield input to empty
+                document.getElementById("join-code").value = "";
+                document.getElementById("username").value = "";
+            }
+
+            // Invalid Join code message from server
+            socket.on('invalid_room_code', function(data) {
+                var text = data['text'];
+                document.getElementById("code").innerHTML = text;   
+            });
+
+            // Successful join message received from server
+            socket.on('join_conf', function(data) {
+                var code = data['code'];
+                document.getElementById("code").innerHTML = "Your Lobby code is: " + code;   
+                //Remove Create button
+                document.getElementById("button-div").style.display = 'none';
+                //Show player form
+                document.getElementById("player-form").style.display = "block";
+                document.getElementById("lobby-tracker").style.display = "block";
+            });
+
+            // Update number of players in lobby
+            socket.on('players_in_lobby', function(data) {
+                var num = data['num'];
+                document.getElementById("num-players").innerHTML = num;
+            });  
+
+        });
+    </script>
+
+</head>
+<body>
+    <div class="menu-container" style="max-width:600px">
+        <h1 class="game-title">Welcome to Clue-Less</h1>
+        <h2 class="game-text" id="code"></h2>
+        <div id="button-div" style="text-align:center">
+            <label for="username" class="game-text">Please enter your username: </label><br>
+            <input type="text" id="username" name="username"><br>
+            <label for="join-code" class="game-text" id="lobby-code">Please enter the lobby code: </label><br>
+            <input id="join-code" type="text" name="join-code"><br>
+            <input id="join" type="submit" value="join Lobby"/>
+        </div>    
+        <div id="lobby-tracker" style="display:none">
+            <p class="game-text">The number of players in the lobby is:</p>
+            <p class="game-text" id="num-players">1</p>
+        </div>  
+    </div>
+    <br>           
+    <div id="player-form" class="menu-container" style="display:none; text-align:left">
+        <form>
+            <p  class="game-text">Please choose a character:</p>
+            {% for character in character_list %}
+                <input type="radio" id="{{character}}" name="player_character" value="{{character}}">
+                <label for="{{character}}" class="game-text">{{character}}</label><br>
+            {% endfor %}
+            <input id="submit-player-form" type="submit" value="Register Player"/>    
+        </form> 
+    </div> 
+
+</body>
+</html>
