@@ -102,7 +102,34 @@
             padding: 0;
             display: none;
         }
+        /* Style for the Suggest Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
 
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+        }
+
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 20px;
+            cursor: pointer;
+        }
     </style>
     
 </head>
@@ -138,7 +165,9 @@
     <div class = "suggestbutton">
         <button onclick = "showSuggestList()">Suggest</button>
     </div>
-
+    <div class = "disprovebutton">
+        <button onclick = "showSuggestList()">Suggest</button>
+    </div>
     <div class = "accusebutton">
         <button onclick = "showAccuseList()">Accuse</button>
     </div>
@@ -208,16 +237,7 @@
     </div>
     
     <div id = "suggestRadio" class = "radio-list-suggest">
-        <form method = "post" action = "/suggestsubmit" target = "hidden-iframe">
-            <h3>Weapon</h3>
-            <label>
-                <input type="radio" name="Weapon" value="Candlestick"> Candlestick
-                <input type="radio" name="Weapon" value="Knife"> Knife
-                <input type="radio" name="Weapon" value="Revolver"> Revolver
-                <input type="radio" name="Weapon" value="Lead Pipe"> Lead Pipe
-                <input type="radio" name="Weapon" value="Wrench"> Wrench
-                <input type="radio" name="Weapon" value="Rope"> Rope
-            </label>
+        <form id="suggestForm" method = "post" action = "/suggestsubmit" target = "hidden-iframe">
             <h3>Character</h3>
             <label>
                 <input type="radio" name="Character" value="Miss Scarlet"> Miss Scarlet
@@ -229,10 +249,73 @@
                 <input type="radio" name="Character" value="Dr. Orchid"> Dr. Orchid 
                 <input type="radio" name="Character" value="Miss Peach"> Miss Peach 
             </label>
+            <h3>Weapon</h3>
+            <label>
+                <input type="radio" name="Weapon" value="Candlestick"> Candlestick
+                <input type="radio" name="Weapon" value="Knife"> Knife
+                <input type="radio" name="Weapon" value="Revolver"> Revolver
+                <input type="radio" name="Weapon" value="Lead Pipe"> Lead Pipe
+                <input type="radio" name="Weapon" value="Wrench"> Wrench
+                <input type="radio" name="Weapon" value="Rope"> Rope
+            </label>
+            <h3>Room</h3>
+            <label>
+                <input type="radio" name="Location" value="Kitchen"> Kitchen
+                <input type="radio" name="Location" value="Study"> Study
+                <input type="radio" name="Location" value="Billiard"> Billiard Room
+                <input type="radio" name="Location" value="Lounge"> Lounge
+                <input type="radio" name="Location" value="Library"> Library
+                <input type="radio" name="Location" value="Conservatory"> Conservatory
+                <input type="radio" name="Location" value="Hall"> Hall
+                <input type="radio" name="Location" value="Ballroom"> Ballroom
+                <input type="radio" name="Location" value="Dining"> Dining Room
+            </label>
             <input type = "submit" value = "Submit">
         </form>
     </div>
-
+    <div id="suggestModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeSuggestModal()">&times;</span>
+            <div id = "suggestRadio" class = "radio-list-suggest"></div><p>Can you disprove?</p>
+            
+                <form id="suggestForm" method = "post" action = "/disprovesubmit" target = "hidden-iframe">
+                    <h3>Character</h3>
+                    <label>
+                        <input type="radio" name="Character" value="Miss Scarlet"> Miss Scarlet
+                        <input type="radio" name="Character" value="Mrs. Peacock"> Mrs. Peacock 
+                        <input type="radio" name="Character" value="Mrs. White"> Mrs. White 
+                        <input type="radio" name="Character" value="Col Mustard"> Col. Mustard 
+                        <input type="radio" name="Character" value="Mr. Green"> Mr. Green
+                        <input type="radio" name="Character" value="Prof Plum"> Prof Plum 
+                        <input type="radio" name="Character" value="Dr. Orchid"> Dr. Orchid 
+                        <input type="radio" name="Character" value="Miss Peach"> Miss Peach 
+                    </label>
+                    <h3>Weapon</h3>
+                    <label>
+                        <input type="radio" name="Weapon" value="Candlestick"> Candlestick
+                        <input type="radio" name="Weapon" value="Knife"> Knife
+                        <input type="radio" name="Weapon" value="Revolver"> Revolver
+                        <input type="radio" name="Weapon" value="Lead Pipe"> Lead Pipe
+                        <input type="radio" name="Weapon" value="Wrench"> Wrench
+                        <input type="radio" name="Weapon" value="Rope"> Rope
+                    </label>
+                    <h3>Room</h3>
+                    <label>
+                        <input type="radio" name="Location" value="Kitchen"> Kitchen
+                        <input type="radio" name="Location" value="Study"> Study
+                        <input type="radio" name="Location" value="Billiard"> Billiard Room
+                        <input type="radio" name="Location" value="Lounge"> Lounge
+                        <input type="radio" name="Location" value="Library"> Library
+                        <input type="radio" name="Location" value="Conservatory"> Conservatory
+                        <input type="radio" name="Location" value="Hall"> Hall
+                        <input type="radio" name="Location" value="Ballroom"> Ballroom
+                        <input type="radio" name="Location" value="Dining"> Dining Room
+                    </label>
+                    <input type = "submit" value = "Submit">
+                </form>
+            </div>
+        </div>
+    </div>
     <div id = "endTurnContainer" class = "endTurnContainer">
         <form method = "post" action = "/endturnsubmit" target = "hidden-iframe">
             <h1>Are you sure?</h1>
@@ -285,7 +368,22 @@
             Hall12: {top:640, left: 610},
             Kitchen: {top:640, left: 730}
         }
+        // Function to open the Suggest Modal
+        function openSuggestModal() {
+            document.getElementById('suggestModal').style.display = 'block';
+        }
 
+        // Function to close the Suggest Modal
+        function closeSuggestModal() {
+            document.getElementById('suggestModal').style.display = 'none';
+        }
+
+        // Event listener for the Suggest form submit button
+        document.getElementById('suggestForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            openSuggestModal();
+            // You can add additional logic here if needed
+        });
         function moveImage() {
             var selectedPosition = document.querySelector('input[name="Location"]:checked').value;
             var newPosition = locations[selectedPosition];

@@ -285,10 +285,13 @@ def movesubmit():
 
 @application.route('/suggestsubmit', methods = ['POST'])
 def suggestsubmit():
-    print(f"{request.form['Weapon']}, {request.form['Character']}")
+    print(f"I suggest {request.form['Character']} with the {request.form['Weapon']} in the {request.form['Location']}")
     return "1"
 
-
+@application.route('/disprovesubmit', methods = ['POST'])
+def disprovesubmit():
+    print(f"I disprove your suggestion since I have either {request.form['Character']}, {request.form['Weapon']}, or {request.form['Location']}")
+    return "1"
 
 
 
