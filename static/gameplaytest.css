@@ -20,6 +20,58 @@ body {
     background-repeat: no-repeat;
     position: fixed;
 }
+.green{
+    position: relative;
+    width: 42px; 
+    height: 70px;  
+    background-image: url('characters/board_sprites/single_green.png');
+    background-size: cover; 
+    position: absolute; 
+}
+.red{
+    position: relative;
+    width: 42px; 
+    height: 70px;  
+    background-image: url('characters/board_sprites/single_scarlet.png');
+    background-size: cover; 
+    position: absolute; 
+}
+.blue{
+    position: relative;
+    width: 42px; 
+    height: 70px;  
+    background-image: url('characters/board_sprites/single_peacock.png');
+    background-size: cover; 
+    position: absolute; 
+}
+.yellow{
+    position: relative;
+    width: 42px; 
+    height: 70px;  
+    background-image: url('characters/board_sprites/single_mustard.png');
+    background-size: cover; 
+    position: absolute; 
+}
+.purple{
+    position: relative;
+    width: 44px; 
+    height: 70px;  
+    background-image: url('characters/board_sprites/single_plum.png');
+    background-size: cover; 
+    position: absolute; 
+}
+.white{
+    position: relative;
+    width: 42px; 
+    height: 70px;  
+    background-image: url('characters/board_sprites/single_white.png');
+    background-size: cover; 
+    position: absolute; 
+}
+#MrGreen {
+    top: 50px; /* Adjust the top position */
+    left: 100px; /* Adjust the left position */
+}
 
 .leftcol {
     background-color: black;
