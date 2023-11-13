@@ -62,6 +62,10 @@
                 document.getElementById("num-players").innerHTML = num;
             });  
 
+            socket.on('start_game_all', function(data) {
+                window.location = data.url
+            });
+
         });
     </script>
 
@@ -75,7 +79,7 @@
             <input type="text" id="username" name="username"><br>
             <label for="join-code" class="game-text" id="lobby-code">Please enter the lobby code: </label><br>
             <input id="join-code" type="text" name="join-code"><br>
-            <input id="join" type="submit" value="join Lobby"/>
+            <input id="join" type="submit" value="join Lobby" class="game-text" style="color: #000;" />
         </div>    
         <div id="lobby-tracker" style="display:none">
             <p class="game-text">The number of players in the lobby is:</p>
@@ -90,7 +94,7 @@
                 <input type="radio" id="{{character}}" name="player_character" value="{{character}}">
                 <label for="{{character}}" class="game-text">{{character}}</label><br>
             {% endfor %}
-            <input id="submit-player-form" type="submit" value="Register Player"/>    
+            <input id="submit-player-form" type="submit" value="Register Player" class="game-text" style="color: #000;" />    
         </form> 
     </div> 
 

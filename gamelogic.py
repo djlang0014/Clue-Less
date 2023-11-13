@@ -14,7 +14,8 @@ class Lobby:
 
     def startGame(self):
         #This will have to make a new game instance object
-        pass
+        newGameInstance = GameInstance(self.roomCode, self.players)
+        return newGameInstance
 
     def removePlayer(self, player):
         self.players.remove(player)
@@ -27,6 +28,8 @@ class Lobby:
 
 class GameInstance:
     def __init__(self, gameID, players):
+        #Right now, gameID is the roomCode that is also used for the lobbies
+        #(used for Flask SocketIO rooms)
         self.gameID = gameID
         self.players = players
         self.currentPlayer = players[0]
