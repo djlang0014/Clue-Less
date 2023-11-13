@@ -1,9 +1,13 @@
 # File originally downloaded from https://github.com/josharnoldjosh/simple-flask-socketio-example
 # on 10/21/23.  Has been modified by Creative Engineers for the Clue-Less project.
 
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit
 import psycopg
+from gameplay import playgame
+from gameinfo import *
+from gamelogic import *
+import threading
 
 # Init the server
 application = Flask(__name__)
@@ -72,6 +76,15 @@ def about():
 def skeletal_tests():
     return render_template('skeletal-tests.html')
 
+@application.route('/testzone')
+def test_zone():
+    testPlayer = Player("Test Player", 1)
+    testPlayer.selectCharacter("Miss Scarlet")
+    testInstance = GameInstance(1, [testPlayer])
+    game_thread = threading.Thread(target=playgame, args=(testInstance, socketio, application))
+    game_thread.start()
+    return render_template('testzone.html')
+
 @socketio.on('connect')
 def test_connect():
     socketio.emit('after connect', {'data':'Connected to Flask Socket.'})
@@ -79,6 +92,23 @@ def test_connect():
 @socketio.on('message')
 def handle_message(data):
     print('received message: ' + data)
+
+@application.route('/accusesubmit', methods = ['POST'])
+def accusesubmit():
+    print(f"{request.form['Weapon']}, {request.form['Character']}, {request.form['Location']}")
+    return "1"
+
+@application.route('/movesubmit', methods = ['POST'])
+def movesubmit():
+    print(f"{request.form['Location']}")
+    return "1"
+
+@application.route('/suggestsubmit', methods = ['POST'])
+def suggestsubmit():
+    print(f"{request.form['Weapon']}, {request.form['Character']}")
+    return "1"
+
+
 
 ####################################################
 # Messages for ClueLess
@@ -351,3 +381,5 @@ def setPlayerCards(playerID):
 if __name__ == '__main__':
     """ Run the app. """    
     socketio.run(application, port=8000, debug=True)
+    
+

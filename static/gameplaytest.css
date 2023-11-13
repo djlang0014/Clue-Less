@@ -1,0 +1,115 @@
+/* static/style.css */
+
+html {
+    width: 100vw;
+    height: 100vh;
+}
+
+body {
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+}
+
+.wrapper {
+    left: 2.5vw;
+    width: 50vw;
+    height: 90vh;
+    background-image: url('logos/gameboard.png');
+    background-size: 50vw 90vh;
+    background-repeat: no-repeat;
+    position: fixed;
+}
+
+.leftcol {
+    background-color: black;
+    width: 2.5vw;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+}
+
+.rightcol {
+    background-color: black;
+    width: 2.5vw;
+    height: 100vh;
+    position: fixed;
+    right: 0;
+}
+
+.buttonzone {
+    display: grid;
+    grid-template-columns: 23.75vw 23.75vw 23.75vw 23.75vw;
+    width: 95vw;
+    height: 10vh;
+    position: fixed;
+    left: 2.5vw;
+    bottom: 0;
+    background-color: black;
+}
+
+
+
+.suggestzone{
+    display: grid;
+}
+
+.movebutton{
+    display: grid;
+    background-color: black;
+    width: 23.75vw;
+    height: 10vh;
+    position: fixed;
+    bottom: 0;
+    color: white;
+    font-size: 2.5vh;
+    font-family: 'Courier New';
+    font-weight: 700;
+    text-align: center;
+    left: 2.5vw;
+}
+
+.suggestbutton{
+    display: grid;
+    background-color: black;
+    width: 23.75vw;
+    height: 10vh;
+    position: fixed;
+    bottom: 0;
+    color: white;
+    font-size: 2.5vh;
+    font-family: 'Courier New';
+    font-weight: 700;
+    text-align: center;
+    left: 26.25vw;
+}
+
+.accusebutton{
+    display: grid;
+    background-color: black;
+    width: 23.75vw;
+    height: 10vh;
+    position: fixed;
+    bottom: 0;
+    color: white;
+    font-size: 2.5vh;
+    font-family: 'Courier New';
+    font-weight: 700;
+    text-align: center;
+    left: 49.90vw;
+}
+
+.endbutton{
+    display: grid;
+    background-color: black;
+    width: 23.75vw;
+    height: 10vh;
+    position: fixed;
+    bottom: 0;
+    color: white;
+    font-size: 2.5vh;
+    font-family: 'Courier New';
+    font-weight: 700;
+    text-align: center;
+    left: 73.75w;
+}
