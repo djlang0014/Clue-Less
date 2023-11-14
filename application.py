@@ -237,6 +237,13 @@ def on_game_start(data):
 
     socketio.emit("start_game_all", {'url': url_for('testzone')}, to=roomCode)
     
+@socketio.on('backdoor')
+def backdoor(data):
+    caseWeapon = gameInstance.caseFile.weapon
+    caseSuspect = gameInstance.caseFile.suspect
+    caseRoom = gameInstance.caseFile.room
+    socketio.emit('message_from_server', {'text': caseWeapon.cardName + ", " + caseSuspect.cardName + ", " + caseRoom.cardName})
+
 
 @socketio.on('request_player_info')
 def request_player_info(data):

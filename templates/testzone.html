@@ -48,7 +48,7 @@
                 // Get the text value
                 event.preventDefault()
                 var text = document.getElementById("testo").value;
-
+                socket.emit('backdoor', {'text':'test'})
                 // Emit a message to the 'send_message' socket
                 socket.emit('request_player_info', {'text':text});
 
