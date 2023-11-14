@@ -9,6 +9,7 @@ from gameinfo import *
 from gamelogic import *
 import threading
 import os
+import time
 
 
 ROOM_CODE_CHARS = string.ascii_lowercase + string.digits
@@ -19,7 +20,6 @@ playerList = []
 playerDict = {} #Key: user_id, Value: Player
 
 characterPlayerDict = {}
-global testInstance
 #add a disabled characters list to disable them for people who join later
 
 cardCharacterList = [
@@ -224,17 +224,39 @@ def on_game_start(data):
     cardLocationStack = cardLocationList
     cardCharacterStack = cardCharacterList
     cardWeaponStack = cardWeaponList
-    caseFile = CaseFile(cardCharacterStack.pop(), cardWeaponStack.pop() ,cardLocationStack.pop())
+    caseFile = CaseFile(
+        cardCharacterStack[random.randint(0,len(cardCharacterStack)-1)],
+        cardWeaponStack[random.randint(0,len(cardWeaponStack)-1)],
+        cardLocationStack[random.randint(0,len(cardLocationStack)-1)]
+    )
     global gameInstance 
     gameInstance = gameRooms[roomCode]
     gameRooms[roomCode].caseFile = caseFile
 
+    #Make sure Miss Scarlet goes first
+    for i in range(len(gameRooms[roomCode].players)):
+        if not i == 0 and gameRooms[roomCode].players[i].character == "Miss Scarlet":
+            gameRooms[roomCode].players[0], gameRooms[roomCode].players[i] = gameRooms[roomCode].players[i], gameRooms[roomCode].players[0]
+            break
+
     for player in gameRooms[roomCode].players:
-        player.addPlayerCard(cardLocationStack.pop())
-        player.addPlayerCard(cardCharacterStack.pop())
-        player.addPlayerCard(cardWeaponStack.pop())
+        print(player.character)
+
+    cards = cardLocationStack + cardCharacterStack + cardWeaponStack
+    random.shuffle(cards)
+    i = 0
+    #Shuffle cards and deal to players
+    while i < len(cards):
+        for player in gameRooms[roomCode].players:
+            player.addPlayerCard(cards[i])
+            i += 1
+            if i >= len(cards):
+                break
 
     socketio.emit("start_game_all", {'url': url_for('testzone')}, to=roomCode)
+    time.sleep(1)
+    socketio.emit("next_turn", {'text':"It is "+gameRooms[roomCode].players[0].name+"'s turn!"})
+    # socketio.emit("your_turn", {'text':"It is your turn!"}, to=gameRooms[roomCode].players[0].sid)
 
 @socketio.on('request_player_info')
 def request_player_info(data):
@@ -273,6 +295,15 @@ def select_character(data):
     player = playerDict[user_id]
     print(player.character)
     socketio.emit("disable_character", {'character': data['character']})
+
+@socketio.on('end_turn')
+def end_turn():
+    user_id = session['user_id']
+    player = playerDict[user_id]
+    i = gameInstance.players.index(player)
+    next_player_index = (i + 1) % len(gameInstance.players)
+    socketio.emit("next_turn", {'text':"It is "+gameInstance.players[next_player_index].name+"'s turn!"})#, to=gameInstance.roomCode)
+    # socketio.emit("your_turn", {'text':"It is your turn!"}, to=gameInstance.players[next_player_index].sid)
     
 
 @application.route('/testzone')
