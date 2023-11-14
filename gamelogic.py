@@ -96,6 +96,7 @@ class GameInstance:
         if location in potential_locations :
             self.playerLocations[playerID] = location
         else :
+            # TODO: Pop up to let user know they can't move there?
             return 0
         pass
 
@@ -111,8 +112,9 @@ class GameInstance:
                     adjacent_locations.append((unit, unit_info.get('type')))
         
         # this creates a new list of tuples that represents all available locations (omits locations that are hallways for now)
-        # Ideally would retrieve that info from database
-        adjacent_locations = [(location, type) for location, type in adjacent_units if type != 'hallway']
+        # Ideally would retrieve that info from database.
+        # * Commented out for now, but this will still return the most adjacent rooms/hallways
+        # adjacent_locations = [(location, type) for location, type in adjacent_units if type != 'hallway']
         return adjacent_locations
         
     
