@@ -93,7 +93,7 @@ class GameInstance:
         board = self.getLocationList()
 
         # call self.getPlayerLocation and retrieve player location
-        potential_locations = self.find_available_locations(board, self.playerLocations[playerID])
+        potential_locations = self.find_available_locations(board, self.playerLocations[sessionID])
 
         # Convert to dict for easy lookup
         potential_locations = dict(potential_locations)
