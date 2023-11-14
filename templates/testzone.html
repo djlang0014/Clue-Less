@@ -12,9 +12,12 @@
         var x = 1;   
         var playername;
         var playercharacter; 
+        var filesuspect;
+        var filelocation;
+        var fileweapon;
 
         var locations = {
-            study: {top:235 , left: 225},
+            Study: {top:215, left: 225},
             Hall1: {top:215, left: 350},
             Hall: {top:215, left: 470},
             Hall2: {top:215, left: 610},
@@ -43,8 +46,9 @@
             
             document.getElementById("getinfo").onclick = function(){
                 // Get the text value
+                event.preventDefault()
                 var text = document.getElementById("testo").value;
-
+                socket.emit('backdoor', {'text':'test'})
                 // Emit a message to the 'send_message' socket
                 socket.emit('request_player_info', {'text':text});
 
@@ -58,19 +62,41 @@
                 socket.emit('move_character', {'character':playercharacter, 'location':location});
             }
 
-            document.getElementById("end-turn-button").onclick = function() {
+            document.getElementById("accusation").onclick = function() {
                 event.preventDefault();
-                document.getElementById("move-button").disabled = true;
-                document.getElementById("suggest-button").disabled = true;
-                document.getElementById("accuse-button").disabled = true;
-                document.getElementById("end-button").disabled = true;
-                socket.emit('end_turn');
+                var weapon = document.querySelector('input[name="Weapon"]:checked').value;
+                var character = document.querySelector('input[name="Character"]:checked').value;
+                var location = document.querySelector('input[name="Location"]:checked').value;
+                socket.emit('accusation', {'weapon':weapon, 'suspect':character, 'room':location});
+            }
+            
+            document.getElementById("suggestionsubmit").onclick = function(){
+                event.preventDefault();
+                var weapon = document.querySelector('input[name="Weapon"]:checked').value;
+                var character = document.querySelector('input[name="Character"]:checked').value;
+                socket.emit('suggestion', {'weapon':weapon, 'suspect':character});
+            }
+
+            document.getElementById("modalsubmit").onclick = function(){
+                event.preventDefault();
+                var weapon = document.querySelector('input[name="Weapon"]:checked').value;
+                var character = document.querySelector('input[name="Character"]:checked').value;
+                var location = document.querySelector('input[name="Location"]:checked').value;
+                socket.emit('suggestionreply', {'weapon':weapon, 'suspect':character, 'room':location});
+
+
             }
 
             // Message recieved from server
             socket.on('message_from_server', function(data) {
                 var text = data['text'];
                 document.getElementById("chat").innerHTML += "Server: " + text + "\n\n";   
+            });
+
+            socket.on('showsuggestmodal', function(data){
+                if (playername != data['playername']){
+                    openSuggestModal();
+                }                
             });
 
             socket.on('playerinfo', function(data) {
@@ -86,6 +112,13 @@
                     x = 0;
                 }
                 document.getElementById('cardoutput').innerText += data['cardtype'] +", " + data['cardname'] + "\n";
+            });
+
+            socket.on('casefilebackdoor', function(data){
+                event.preventDefault();
+                filesuspect = data['suspect'];
+                fileweapon = data['weapon'];
+                filelocation = data['location'];
             });
 
             socket.on('movecharacter', function(data){
@@ -237,7 +270,7 @@
     </div>
 
     <div id = "accuseRadio" class = "radio-list-accuse">
-        <form method = "post" action = "/accusesubmit" target = "hidden-iframe">
+        <form>
             <h3>Weapon</h3>
             <label>
                 <input type="radio" name="Weapon" value="Candlestick"> Candlestick
@@ -268,7 +301,7 @@
                 <input type="radio" name="Location" value="Ballroom"> Ballroom
                 <input type="radio" name="Location" value="Dining Room"> Dining Room
             </label>
-            <input type = "submit" value = "Submit">
+            <input type = "submit" value = "Submit" id ="accusation">
         </form>
     </div>
 
@@ -303,7 +336,7 @@
     </div>
     
     <div id = "suggestRadio" class = "radio-list-suggest">
-        <form id="suggestForm" method = "post" action = "/suggestsubmit" target = "hidden-iframe">
+        <form>
             <h3>Character</h3>
             <label>
                 <input type="radio" name="Character" value="Miss Scarlet"> Miss Scarlet
@@ -334,15 +367,15 @@
                 <input type="radio" name="Location" value="Ballroom"> Ballroom
                 <input type="radio" name="Location" value="Dining"> Dining Room
             </label>
-            <input type = "submit" value = "Submit">
+            <input type = "submit" value = "Submit" id = "suggestionsubmit">
         </form>
     </div>
+
     <div id="suggestModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeSuggestModal()">&times;</span>
             <div id = "suggestRadio" class = "radio-list-suggest"></div><p>Can you disprove?</p>
-            
-                <form id="suggestForm" method = "post" action = "/disprovesubmit" target = "hidden-iframe">
+                <form>
                     <h3>Character</h3>
                     <label>
                         <input type="radio" name="Character" value="Miss Scarlet"> Miss Scarlet
@@ -375,8 +408,9 @@
                         <input type="radio" name="Location" value="Ballroom"> Ballroom
                         <input type="radio" name="Location" value="Dining"> Dining Room
                     </label>
-                    <input id="closeModalButton" type = "submit" value = "Submit">
+                    <input id="modalsubmit" type = "submit" value = "Submit">
                 </form>
+                
             </div>
         </div>
     </div>

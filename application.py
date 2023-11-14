@@ -230,8 +230,9 @@ def on_game_start(data):
         cardLocationStack[random.randint(0,len(cardLocationStack)-1)]
     )
     global gameInstance 
-    gameInstance = gameRooms[roomCode]
     gameRooms[roomCode].caseFile = caseFile
+    gameInstance = gameRooms[roomCode]
+    
 
     #Make sure Miss Scarlet goes first
     for i in range(len(gameRooms[roomCode].players)):
@@ -258,14 +259,25 @@ def on_game_start(data):
     socketio.emit("next_turn", {'text':"It is "+gameRooms[roomCode].players[0].name+"'s turn!"})
     # socketio.emit("your_turn", {'text':"It is your turn!"}, to=gameRooms[roomCode].players[0].sid)
 
+    
+@socketio.on('backdoor')
+def backdoor(data):
+    caseWeapon = gameInstance.caseFile.weapon
+    caseSuspect = gameInstance.caseFile.suspect
+    caseRoom = gameInstance.caseFile.room
+    socketio.emit('message_from_server', {'text': caseWeapon.cardName + ", " + caseSuspect.cardName + ", " + caseRoom.cardName})
+
+
 @socketio.on('request_player_info')
 def request_player_info(data):
+    caseFile = gameInstance.caseFile
+    #socketio.emit("casefilebackdoor", {'location': caseFile.room.cardName, 'suspect': caseFile.suspect.cardName, 'weapon': caseFile.weapon.cardName}, to=request.sid)
     user_id = session['user_id']
     player = playerDict[user_id]
     print(player.getPlayerCharacter())
     socketio.emit("playerinfo", {'playername': player.getPlayerName(), 'character': player.getPlayerCharacter()}, to=request.sid)
     playerCards = player.getPlayerCards()
-    
+
     for card in playerCards:
         socketio.emit("playercard", {'cardtype': card.cardType, 'cardname': card.cardName}, to=request.sid)
     
@@ -347,8 +359,48 @@ def movecharacter(data):
         socketio.emit('movecharacter', {'character': character, 'location': newLocation})
     else:
         socketio.emit('message_from_server', {'text': character + ' cannot move there.'})
+
+@socketio.on('accusation')
+def accusation(data):
+    accuseWeapon = data['weapon']
+    accuseSuspect = data['suspect']
+    accuseRoom = data['room']
+    player = playerDict[session['user_id']]
+    name = player.name
+
+    caseWeapon = gameInstance.caseFile.weapon
+    caseSuspect = gameInstance.caseFile.suspect
+    caseRoom = gameInstance.caseFile.room
+
+    accusationString = "" + accuseWeapon + ", " + accuseSuspect + ", " + accuseRoom + "."
+
+    if accuseWeapon == caseWeapon and accuseSuspect == caseSuspect and accuseRoom == caseRoom:
+        socketio.emit('message_from_server', {'text': name + ' wins!'})
+    else:
+        gameInstance.players.remove(player)
+        socketio.emit('message_from_server', {'text': name + ' was incorrect. They guessed: ' + accusationString})
     
-    
+@socketio.on('suggestion')
+def suggestion(data):
+    suggestWeapon = data['weapon']
+    suggestSuspect = data['suspect']
+    suggestRoom = gameInstance.getPlayerLocation(session['user_id'])
+    player = playerDict[session['user_id']]
+    name = player.name
+
+    suggestionString = "" + suggestWeapon + ", " + suggestSuspect + ", " + suggestRoom + "."
+
+    socketio.emit('message_from_server', {'text': name + ' suggested: ' + suggestionString})
+    socketio.emit('showsuggestmodal', {'player': name})
+
+@socketio.on('suggestionreply')
+def suggestionreply(data):
+    player = playerDict[session['user_id']]
+    name = player.name
+    weapon = data['weapon']
+    character = data['suspect']
+    room = data['room']
+    socketio.emit('message_from_server', {'text': name + ' showed ' + character + ' + ' + weapon + ' + ' + room + '.'})
 
 
 @application.route('/suggestsubmit', methods = ['POST'])
