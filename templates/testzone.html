@@ -77,10 +77,24 @@
                 socket.emit('suggestion', {'weapon':weapon, 'suspect':character});
             }
 
+            document.getElementById("modalsubmit").onclick = function(){
+                event.preventDefault();
+                var weapon = document.querySelector('input[name="Weapon"]:checked').value;
+                var character = document.querySelector('input[name="Character"]:checked').value;
+                var location = document.querySelector('input[name="Location"]:checked').value;
+                socket.emit('suggestionreply', {'weapon':weapon, 'suspect':character, 'room':location});
+            }
+
             // Message recieved from server
             socket.on('message_from_server', function(data) {
                 var text = data['text'];
                 document.getElementById("chat").innerHTML += "Server: " + text + "\n\n";   
+            });
+
+            socket.on('showsuggestmodal', function(data){
+                if (playername != data['playername']){
+                    openSuggestModal();
+                }                
             });
 
             socket.on('playerinfo', function(data) {
@@ -99,9 +113,10 @@
             });
 
             socket.on('casefilebackdoor', function(data){
-                suspect = data['suspect'];
-                weapon = data['weapon'];
-                location = data['location'];
+                event.preventDefault();
+                filesuspect = data['suspect'];
+                fileweapon = data['weapon'];
+                filelocation = data['location'];
             });
 
             socket.on('movecharacter', function(data){
@@ -311,7 +326,7 @@
     </div>
     
     <div id = "suggestRadio" class = "radio-list-suggest">
-        <form id="suggestForm" method = "post" action = "/suggestsubmit" target = "hidden-iframe">
+        <form>
             <h3>Character</h3>
             <label>
                 <input type="radio" name="Character" value="Miss Scarlet"> Miss Scarlet
@@ -342,7 +357,7 @@
                 <input type="radio" name="Location" value="Ballroom"> Ballroom
                 <input type="radio" name="Location" value="Dining"> Dining Room
             </label>
-            <input type = "submit" value = "Submit">
+            <input type = "submit" value = "Submit" id = "suggestionsubmit">
         </form>
     </div>
 
@@ -383,7 +398,7 @@
                         <input type="radio" name="Location" value="Ballroom"> Ballroom
                         <input type="radio" name="Location" value="Dining"> Dining Room
                     </label>
-                    <input id="suggestionsubmit" type = "submit" value = "Submit">
+                    <input id="modalsubmit" type = "submit" value = "Submit">
                 </form>
                 
             </div>

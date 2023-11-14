@@ -341,6 +341,27 @@ def accusation(data):
         gameInstance.players.remove(player)
         socketio.emit('message_from_server', {'text': name + ' was incorrect. They guessed: ' + accusationString})
     
+@socketio.on('suggestion')
+def suggestion(data):
+    suggestWeapon = data['weapon']
+    suggestSuspect = data['suspect']
+    suggestRoom = gameInstance.getPlayerLocation(session['user_id'])
+    player = playerDict[session['user_id']]
+    name = player.name
+
+    suggestionString = "" + suggestWeapon + ", " + suggestSuspect + ", " + suggestRoom + "."
+
+    socketio.emit('message_from_server', {'text': name + ' suggested: ' + suggestionString})
+    socketio.emit('showsuggestmodal', {'player': name})
+
+@socketio.on('suggestionreply')
+def suggestionreply(data):
+    player = playerDict[session['user_id']]
+    name = player.name
+    weapon = data['weapon']
+    character = data['suspect']
+    room = data['room']
+    socketio.emit('message_from_server', {'text': name + ' showed ' + character + ' + ' + weapon + ' + ' + room + '.'})
 
 
 @application.route('/suggestsubmit', methods = ['POST'])
