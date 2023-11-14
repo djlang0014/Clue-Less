@@ -46,10 +46,14 @@ class Player:
 
     def getPlayerCards(self):
         #This will return the cards the player has
-        pass
+        return self.cards
 
     def getPlayerName(self):
         return self.name
+    
+    def addPlayerCard(self, card):
+        self.cards.append(card)
+
 
 class Card:
     def __init__(self, cardType, cardName, cardID=None):
