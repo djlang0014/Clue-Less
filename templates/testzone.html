@@ -83,6 +83,8 @@
                 var character = document.querySelector('input[name="Character"]:checked').value;
                 var location = document.querySelector('input[name="Location"]:checked').value;
                 socket.emit('suggestionreply', {'weapon':weapon, 'suspect':character, 'room':location});
+
+
             }
 
             // Message recieved from server
@@ -128,9 +130,19 @@
                 movingImage.style.left = newPosition.left + "px";
             });
 
+            socket.on('next_turn', function(data) {
+                var text = data['text'];
+                document.getElementById("chat").innerHTML += "Server: " + text + "\n\n";   
+            });
 
-
-
+            socket.on('your_turn', function(data) {
+                var text = data['text'];
+                document.getElementById("chat").innerHTML += "Server: " + text + "\n\n";   
+                document.getElementById("move-button").disabled = false;
+                document.getElementById("suggest-button").disabled = false;
+                document.getElementById("accuse-button").disabled = false;
+                document.getElementById("end-button").disabled = false;
+            });
 
         });
 
@@ -238,21 +250,19 @@
 
     <div class = "movebutton">
         <!--This will have to be changed to selecting the location to move to-->
-        <button onclick = "showMoveList()">Move</button>
+        <button onclick = "showMoveList()" id="move-button">Move</button>
     </div>
 
     <div class = "suggestbutton">
-        <button onclick = "showSuggestList()">Suggest</button>
+        <button onclick = "showSuggestList()" id="suggest-button">Suggest</button>
     </div>
-    <div class = "disprovebutton">
-        <button onclick = "showSuggestList()">Suggest</button>
-    </div>
+
     <div class = "accusebutton">
-        <button onclick = "showAccuseList()">Accuse</button>
+        <button onclick = "showAccuseList()" id="accuse-button">Accuse</button>
     </div>
 
     <div class = "endbutton">
-        <button onclick = "showEndTurn()">End Turn</button>
+        <button onclick = "showEndTurn()" id="end-button">End Turn</button>
     </div>
 
     <div id = "serverchat" class = "serverchat">
@@ -407,7 +417,7 @@
     <div id = "endTurnContainer" class = "endTurnContainer">
         <form method = "post" action = "/endturnsubmit" target = "hidden-iframe">
             <h1>Are you sure?</h1>
-            <input type = "submit" value = "End Turn">
+            <input type = "submit" value = "End Turn" id="end-turn-button">
         </form>
     
     <div class = "output">
