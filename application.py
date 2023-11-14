@@ -106,7 +106,7 @@ def message_recieved(data, buttonnum):
         case 3:
             getPlayerCharacter(data['text'])
         case 4:
-            print("Somehow I lost the maystay function")
+            getMayStay(data['text'])
         case 5:
             getCurPlayer(data['text'])
         case 6:
@@ -485,32 +485,33 @@ def onAccusation(data):
 
 def accusation(accString):
     numstring = accString.split(',')
-    # num1 = numstring[0].strip()
-    # num1 = int(num1)
-    # num2 = numstring[1].strip()
-    # num2 = int(num2)
-    # num3 = numstring[2].strip()
-    # num3 = int(num3)
-    with conn.cursor() as cur:
-        cur.execute("SELECT case_file FROM game_logs WHERE game_id = 1")
-        caseFile = cur.fetchone()[0]
-        # cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[0],))
-        # caselocation = cur.fetchone()[0]
-        # cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[1],))
-        # casecharacter = cur.fetchone()[0]
-        # cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[2],))
-        # caseweapon = cur.fetchone()[0]
-        socketio.emit('message_from_server', {'text':'The case file is: ' + str(caseFile)})
-        # cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (num1,))
-        # guessLocation = cur.fetchone()[0]
-        # cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (num2,))
-        # guessCharacter = cur.fetchone()[0]
-        # cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (num3,))
-        # guessWeapon = cur.fetchone()[0]
-        # if num1 == caseFile[0] and num2 == caseFile[1] and num3 == caseFile[2]:
-        #     socketio.emit('message_from_server', {'text':'You guessed: ' + guessLocation + ", " + guessCharacter + ", " + guessWeapon + ". You win!"})
-        # else:
-        #     socketio.emit('message_from_server', {'text':'You guessed: ' + guessLocation + ", " + guessCharacter + ", " + guessWeapon + ". You lose."})
+    num1 = numstring[0].strip()
+    num1 = int(num1)
+    num2 = numstring[1].strip()
+    num2 = int(num2)
+    num3 = numstring[2].strip()
+    num3 = int(num3)
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT case_file FROM game_info WHERE game_id = 1")
+            caseFile = cur.fetchone()[0]
+            cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[0],))
+            caselocation = cur.fetchone()[0]
+            cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[1],))
+            casecharacter = cur.fetchone()[0]
+            cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[2],))
+            caseweapon = cur.fetchone()[0]
+            socketio.emit('message_from_server', {'text':'The case file is: ' + caselocation + ", " + casecharacter + ", " + caseweapon})
+            cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (num1,))
+            guessLocation = cur.fetchone()[0]
+            cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (num2,))
+            guessCharacter = cur.fetchone()[0]
+            cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (num3,))
+            guessWeapon = cur.fetchone()[0]
+            if num1 == caseFile[0] and num2 == caseFile[1] and num3 == caseFile[2]:
+                socketio.emit('message_from_server', {'text':'You guessed: ' + guessLocation + ", " + guessCharacter + ", " + guessWeapon + ". You win!"})
+            else:
+                socketio.emit('message_from_server', {'text':'You guessed: ' + guessLocation + ", " + guessCharacter + ", " + guessWeapon + ". You lose."})
 
 ## Server to Database:
 # Request and update data according to gameplay
@@ -521,66 +522,86 @@ def accusation(accString):
 The exact database layout will need to be refined for the minimal implementation, but this should be good for the skeletal.
 """
 def getCharacterLocation(playerID):
-    with conn.cursor() as cur:
-        cur.execute("SELECT location FROM players WHERE player_id = %s", (playerID,))
-        socketio.emit('message_from_server', {'text':'Here is the player location: ' + cur.fetchone()[0]})
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT location FROM players WHERE player_id = %s", (playerID,))
+            socketio.emit('message_from_server', {'text':'Here is the player location: ' + cur.fetchone()[0]})
 
 def getPlayerName(playerID):
-    with conn.cursor() as cur:
-        cur.execute("SELECT player_name FROM players WHERE player_id = %s", (playerID,))
-        socketio.emit('message_from_server', {'text':'Here is the player name: ' + cur.fetchone()[0]})
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT player_name FROM players WHERE player_id = %s", (playerID,))
+            socketio.emit('message_from_server', {'text':'Here is the player name: ' + cur.fetchone()[0]})
 
 def getPlayerCharacter(playerID):
-    with conn.cursor() as cur:
-        cur.execute("SELECT character_name FROM players WHERE player_id = %s", (playerID,))
-        socketio.emit('message_from_server', {'text':'Here is the player character: ' + cur.fetchone()[0]})
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT character_name FROM players WHERE player_id = %s", (playerID,))
+            socketio.emit('message_from_server', {'text':'Here is the player character: ' + cur.fetchone()[0]})
+
+def getMayStay(playerID):
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            #These can be replaced with function calls later, but we are sending visible messages for now so I can't return a value.
+            location = cur.execute("SELECT location FROM players WHERE player_id = %s", (playerID,))
+            location = location.fetchone()[0]
+            name = cur.execute("SELECT player_name FROM players WHERE player_id = %s", (playerID,))
+            playerName = name.fetchone()[0]
+            if location == "Hallway":
+                socketio.emit('message_from_server', {'text': playerName + ' is in a hallway and may not stay.'})
+            else:
+                socketio.emit('message_from_server', {'text': playerName + ' is not in a hallway and may stay.'})
 
 def getCurPlayer(gameID):
-    with conn.cursor() as cur:
-        print(gameID)
-        gameId = int(gameID)
-        cur.execute("SELECT currentid FROM gamestate WHERE game_id = %s", (gameId,))
-        cur.execute("SELECT player_name FROM players WHERE player_id = %s", (cur.fetchone()[0],))
-        playername = cur.fetchone()[0]
-        socketio.emit('message_from_server', {'text':'It is ' + playername + "'s turn."})
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            print(gameID)
+            gameId = int(gameID)
+            cur.execute("SELECT currentid FROM gamestate WHERE game_id = %s", (gameId,))
+            cur.execute("SELECT player_name FROM players WHERE player_id = %s", (cur.fetchone()[0],))
+            playername = cur.fetchone()[0]
+            socketio.emit('message_from_server', {'text':'It is ' + playername + "'s turn."})
 
 def getNextPlayer(playerID):
-    with conn.cursor() as cur:
-        cur.execute("SELECT MAX(player_id) FROM players")
-        maxID = cur.fetchone()[0]
-        if int(playerID) < int(maxID):
-            cur.execute("SELECT player_name FROM players WHERE player_id = %s", ((int(playerID) + 1),))
-            socketio.emit('message_from_server', {'text':cur.fetchone()[0] + " has the next turn."} )
-        else:
-            cur.execute("SELECT player_name FROM players WHERE player_id = %s", (1,))
-            socketio.emit('message_from_server', {'text':cur.fetchone()[0] + " has the next turn."} )    
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT MAX(player_id) FROM players")
+            maxID = cur.fetchone()[0]
+            if int(playerID) < int(maxID):
+                cur.execute("SELECT player_name FROM players WHERE player_id = %s", ((int(playerID) + 1),))
+                socketio.emit('message_from_server', {'text':cur.fetchone()[0] + " has the next turn."} )
+            else:
+                cur.execute("SELECT player_name FROM players WHERE player_id = %s", (1,))
+                socketio.emit('message_from_server', {'text':cur.fetchone()[0] + " has the next turn."} )    
 
 def getCaseFile(gameID):
     #This can be a join or something
-    with conn.cursor() as cur:
-        #Returns an array of card IDs which are integers. Will be in location, character, weapon order.
-        cur.execute("SELECT case_file FROM game_info WHERE game_id = %s", (gameID,))
-        caseFile = cur.fetchone()[0]
-        cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[0],))
-        location = cur.fetchone()[0]
-        cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[1],))
-        character = cur.fetchone()[0]
-        cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[2],))
-        weapon = cur.fetchone()[0]
-        socketio.emit('message_from_server', {'text':'The case file is: ' + location + ", " + character + ", " + weapon})
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            #Returns an array of card IDs which are integers. Will be in location, character, weapon order.
+            cur.execute("SELECT case_file FROM game_info WHERE game_id = %s", (gameID,))
+            caseFile = cur.fetchone()[0]
+            cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[0],))
+            location = cur.fetchone()[0]
+            cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[1],))
+            character = cur.fetchone()[0]
+            cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[2],))
+            weapon = cur.fetchone()[0]
+            socketio.emit('message_from_server', {'text':'The case file is: ' + location + ", " + character + ", " + weapon})
 
 def getPlayerCards(playerID):
-    with conn.cursor() as cur:
-        #Returns an array of card IDs which are integers. Will be in location, character, weapon order.
-        cur.execute("SELECT card_ids FROM players WHERE player_ID = %s", (playerID,))
-        caseFile = cur.fetchone()[0]
-        cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[0],))
-        location = cur.fetchone()[0]
-        cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[1],))
-        character = cur.fetchone()[0]
-        cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[2],))
-        weapon = cur.fetchone()[0]
-        socketio.emit('message_from_server', {'text':'The case file is: ' + location + ", " + character + ", " + weapon})
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            #Returns an array of card IDs which are integers. Will be in location, character, weapon order.
+            cur.execute("SELECT card_ids FROM players WHERE player_ID = %s", (playerID,))
+            caseFile = cur.fetchone()[0]
+            cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[0],))
+            location = cur.fetchone()[0]
+            cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[1],))
+            character = cur.fetchone()[0]
+            cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[2],))
+            weapon = cur.fetchone()[0]
+            socketio.emit('message_from_server', {'text':'The case file is: ' + location + ", " + character + ", " + weapon})
 
 """
 Will we need to set default values at the start of each round? 
@@ -589,67 +610,73 @@ We could also make a larger function that accepts and sets all of the values for
 """
 # Setters
 def setCharacterLocation(playerID, location):
-    with conn.cursor() as cur:
-        #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
-        cur.execute("UPDATE players SET location = %s WHERE player_ID = %s", (location, playerID,))
-        cur.execute("SELECT location FROM players WHERE player_ID = %s", (playerID,))
-        #fetchone() returns a tuple, so we need to index it to get the value
-        if cur.fetchone()[0] == (location):
-            socketio.emit("message_from_server", {'text': 'Success'})
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
+            cur.execute("UPDATE players SET location = %s WHERE player_ID = %s", (location, playerID,))
+            cur.execute("SELECT location FROM players WHERE player_ID = %s", (playerID,))
+            #fetchone() returns a tuple, so we need to index it to get the value
+            if cur.fetchone()[0] == (location):
+                socketio.emit("message_from_server", {'text': 'Success'})
 
 def setPlayerName(playerID, playerName):
-    with conn.cursor() as cur:
-        #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
-        cur.execute("UPDATE players SET player_name = %s WHERE player_ID = %s", (playerName, playerID,))
-        cur.execute("SELECT player_name FROM players WHERE player_ID = %s", (playerID,))
-        #fetchone() returns a tuple, so we need to index it to get the value
-        if cur.fetchone()[0] == (playerName):
-            socketio.emit("message_from_server", {'text': 'Success'})
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
+            cur.execute("UPDATE players SET player_name = %s WHERE player_ID = %s", (playerName, playerID,))
+            cur.execute("SELECT player_name FROM players WHERE player_ID = %s", (playerID,))
+            #fetchone() returns a tuple, so we need to index it to get the value
+            if cur.fetchone()[0] == (playerName):
+                socketio.emit("message_from_server", {'text': 'Success'})
 
 def setPlayerCharacter(playerID, character_name):
-    with conn.cursor() as cur:
-        #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
-        cur.execute("UPDATE players SET character_name = %s WHERE player_ID = %s", (character_name, playerID,))
-        cur.execute("SELECT character_name FROM players WHERE player_ID = %s", (playerID,))
-        #fetchone() returns a tuple, so we need to index it to get the value
-        if cur.fetchone()[0] == (character_name):
-            socketio.emit("message_from_server", {'text': 'Success'})
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
+            cur.execute("UPDATE players SET character_name = %s WHERE player_ID = %s", (character_name, playerID,))
+            cur.execute("SELECT character_name FROM players WHERE player_ID = %s", (playerID,))
+            #fetchone() returns a tuple, so we need to index it to get the value
+            if cur.fetchone()[0] == (character_name):
+                socketio.emit("message_from_server", {'text': 'Success'})
 
 def setMayStay(playerID):
-    with conn.cursor() as cur:
-        #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
-        #fetchone() returns a tuple, so we need to index it to get the value
-        location = cur.execute("SELECT location FROM players WHERE player_id = %s", (playerID,))
-        location = location.fetchone()[0]
-        if location == "Hallway":
-            cur.execute("UPDATE players SET may_stay = %s WHERE player_ID = %s", (False, playerID,))
-            cur.execute("SELECT location FROM players WHERE player_id = %s", (playerID,))
-            if not cur.fetchone()[0]:
-                socketio.emit("message_from_server", {'text': 'Success'})
-        else:
-            cur.execute("UPDATE players SET may_stay = %s WHERE player_ID = %s", (True, playerID,))
-            cur.execute("SELECT location FROM players WHERE player_id = %s", (playerID,))
-            if cur.fetchone()[0]:
-                socketio.emit("message_from_server", {'text': 'Success'})
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
+            #fetchone() returns a tuple, so we need to index it to get the value
+            location = cur.execute("SELECT location FROM players WHERE player_id = %s", (playerID,))
+            location = location.fetchone()[0]
+            if location == "Hallway":
+                cur.execute("UPDATE players SET may_stay = %s WHERE player_ID = %s", (False, playerID,))
+                cur.execute("SELECT location FROM players WHERE player_id = %s", (playerID,))
+                if not cur.fetchone()[0]:
+                    socketio.emit("message_from_server", {'text': 'Success'})
+            else:
+                cur.execute("UPDATE players SET may_stay = %s WHERE player_ID = %s", (True, playerID,))
+                cur.execute("SELECT location FROM players WHERE player_id = %s", (playerID,))
+                if cur.fetchone()[0]:
+                    socketio.emit("message_from_server", {'text': 'Success'})
                        
 def setCurPlayer(gameID):
-    with conn.cursor() as cur:
-        cur.execute("SELECT currentid FROM gamestate WHERE game_id = %s", (gameID,))
-        cur.execute("UPDATE gamestate SET currentID = %s WHERE game_id = %s", (2, gameID,))
-        socketio.emit("message_from_server", {'text': 'Success'})
-        #fetchone() returns a tuple, so we need to index it to get the value
-        #if cur.fetchone()[0] == (playerName):
-        #    print("Success")
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT currentid FROM gamestate WHERE game_id = %s", (gameID,))
+            cur.execute("UPDATE gamestate SET currentID = %s WHERE game_id = %s", (2, gameID,))
+            socketio.emit("message_from_server", {'text': 'Success'})
+            #fetchone() returns a tuple, so we need to index it to get the value
+            #if cur.fetchone()[0] == (playerName):
+            #    print("Success")
 
 def setNextPlayer(playerID):
-    with conn.cursor() as cur:
-        #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
-        #cur.execute("UPDATE players SET player_name = %s WHERE player_ID = %s", (playerName, playerID,))
-        cur.execute("SELECT player_name FROM players WHERE player_ID = %s", (playerID,))
-        socketio.emit("message_from_server", {'text': 'Success'})
-        #fetchone() returns a tuple, so we need to index it to get the value
-        #if cur.fetchone()[0] == (playerName):
-        #    print("Success")
+    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
+        with conn.cursor() as cur:
+            #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
+            #cur.execute("UPDATE players SET player_name = %s WHERE player_ID = %s", (playerName, playerID,))
+            cur.execute("SELECT player_name FROM players WHERE player_ID = %s", (playerID,))
+            socketio.emit("message_from_server", {'text': 'Success'})
+            #fetchone() returns a tuple, so we need to index it to get the value
+            #if cur.fetchone()[0] == (playerName):
+            #    print("Success")
 
 def setCaseFile(gameID):
     pass
