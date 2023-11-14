@@ -29,8 +29,6 @@ cardCharacterList = [
     Card("Character", "Mr. Green"),
     Card("Character", "Mrs. Peacock"),
     Card("Character", "Prof. Plum"),
-    Card("Character", "Dr. Orchid"),
-    Card("Character", "Miss Peach"),
 ]
 cardWeaponList =[
     Card("Weapon", "Rope"),
@@ -245,6 +243,7 @@ def request_player_info(data):
     print(player.getPlayerCharacter())
     socketio.emit("playerinfo", {'playername': player.getPlayerName(), 'character': player.getPlayerCharacter()}, to=request.sid)
     playerCards = player.getPlayerCards()
+    
     for card in playerCards:
         socketio.emit("playercard", {'cardtype': card.cardType, 'cardname': card.cardName}, to=request.sid)
     

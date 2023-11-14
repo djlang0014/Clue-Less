@@ -58,11 +58,6 @@
                 socket.emit('move_character', {'character':playercharacter, 'location':location})
             }
 
-            document.getElementById("").onclick = function() {
-                event.preventDefault();
-                var location = document.querySelector('input[name="Location2"]:checked').value;
-                socket.emit('move_character', {'character':playercharacter, 'location':location})
-            }
             // Message recieved from server
             socket.on('message_from_server', function(data) {
                 var text = data['text'];
@@ -297,9 +292,9 @@
                 <input type="radio" name="Character" value="Miss Scarlet"> Miss Scarlet
                 <input type="radio" name="Character" value="Mrs. Peacock"> Mrs. Peacock 
                 <input type="radio" name="Character" value="Mrs. White"> Mrs. White 
-                <input type="radio" name="Character" value="Col Mustard"> Col. Mustard 
+                <input type="radio" name="Character" value="Col. Mustard"> Col. Mustard 
                 <input type="radio" name="Character" value="Mr. Green"> Mr. Green
-                <input type="radio" name="Character" value="Prof Plum"> Prof Plum 
+                <input type="radio" name="Character" value="Prof. Plum"> Prof Plum 
             </label>
             <h3>Weapon</h3>
             <label>
