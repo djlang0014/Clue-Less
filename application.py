@@ -2,6 +2,7 @@
 # on 10/21/23.  Has been modified by Creative Engineers for the Clue-Less project.
 import random
 import string
+from config import DB_NAME, DB_USERNAME, DB_PASSWORD
 from flask import Flask, render_template, request, url_for, session
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import psycopg
@@ -81,6 +82,10 @@ characters = ["Miss Scarlet", "Prof. Plum", "Mrs. Peacock", "Mr. Green",
 # Init the server
 application = Flask(__name__)
 socketio = SocketIO(application, logger=True)
+
+# create database connection with credentials
+# can remove all other psycopg.connect() lines
+conn = psycopg.connect(f"dbname={DB_NAME} user={DB_USERNAME} password={DB_PASSWORD}")
 application.secret_key = os.urandom(24)  
 
 # Send HTML!
