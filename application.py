@@ -2,12 +2,13 @@
 # on 10/21/23.  Has been modified by Creative Engineers for the Clue-Less project.
 import random
 import string
-from flask import Flask, render_template, request, url_for
+from flask import Flask, render_template, request, url_for, session
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import psycopg
 from gameinfo import *
 from gamelogic import *
 import threading
+import os
 
 
 ROOM_CODE_CHARS = string.ascii_lowercase + string.digits
@@ -15,7 +16,8 @@ ROOM_CODE_CHARS = string.ascii_lowercase + string.digits
 gameRooms = {}
 
 playerList = []
-playerDict = {}
+playerDict = {} #Key: user_id, Value: Player
+
 characterPlayerDict = {}
 global testInstance
 #add a disabled characters list to disable them for people who join later
@@ -81,7 +83,7 @@ characters = ["Miss Scarlet", "Prof. Plum", "Mrs. Peacock", "Mr. Green",
 # Init the server
 application = Flask(__name__)
 socketio = SocketIO(application, logger=True)
-
+application.secret_key = os.urandom(24)  
 
 # Send HTML!
 #@application.route('/')
@@ -126,7 +128,9 @@ def message_recieved(data, buttonnum):
 
 # Send HTML!
 @application.route('/')
-def root():    
+def root():
+    if 'user_id' not in session:
+        session['user_id'] = os.urandom(24).hex()    
     return render_template('main_menu.html')
 
 @application.route('/play')
@@ -166,9 +170,11 @@ def handle_message(data):
 def on_create(data):
     username = data['username']
     #Create new player
-    new_player = Player(username, request.sid)
+    user_id = session['user_id']
+    new_player = Player(username, user_id)
     playerList.append(new_player)
-    playerDict[request.sid] = new_player
+    playerDict[user_id] = new_player
+    print(new_player.name)
     #Create unique game/roomCode
     while True:
         roomCode = ''.join(random.choice(ROOM_CODE_CHARS) for i in range(6))
@@ -186,9 +192,10 @@ def on_create(data):
 def on_join(data):
     username = data['username']
     #Create new player
-    new_player = Player(username, request.sid)
+    user_id = session['user_id']
+    new_player = Player(username, user_id)
     playerList.append(new_player)
-    playerDict[request.sid] = new_player
+    playerDict[user_id] = new_player
     
 
     room = data['roomCode']
@@ -232,8 +239,10 @@ def on_game_start(data):
 
 @socketio.on('request_player_info')
 def request_player_info(data):
-    player = playerDict[request.sid]
-    socketio.emit("playerinfo", {'playername': player.name, 'character': player.character}, to=request.sid)
+    user_id = session['user_id']
+    player = playerDict[user_id]
+    print(player.getPlayerCharacter())
+    socketio.emit("playerinfo", {'playername': player.getPlayerName(), 'character': player.getPlayerCharacter()}, to=request.sid)
     playerCards = player.getPlayerCards()
     for card in playerCards:
         socketio.emit("playercard", {'cardtype': card.cardType, 'cardname': card.cardName}, to=request.sid)
@@ -241,10 +250,11 @@ def request_player_info(data):
 
 @socketio.on('select_character')
 def select_character(data):
-    playerDict[request.sid].selectCharacter(data['character'])
+    user_id = session['user_id']
+    character = data['character']
+    playerDict[user_id].selectCharacter(character)
     roomCode = data['roomCode']
-    player = playerDict[request.sid]
-    player.character = data['character']
+    player = playerDict[user_id]
     print(player.character)
     socketio.emit("disable_character", {'character': data['character']})
     
@@ -278,9 +288,12 @@ def accusesubmit():
     
     return "1"
 
-@application.route('/movesubmit', methods = ['POST'])
-def movesubmit():
-    newLocation = request.form['Location']
+@socketio.on('move_character')
+def movecharacter(data):
+    newLocation = data['Location']
+    character = data['character']
+    player = playerDict[session['user_id']]
+    player.changePlayerLocation(newLocation)
 
 
 @application.route('/suggestsubmit', methods = ['POST'])
@@ -290,6 +303,7 @@ def suggestsubmit():
 
 @application.route('/disprovesubmit', methods = ['POST'])
 def disprovesubmit():
+    #emit to message_from_server
     print(f"I disprove your suggestion since I have either {request.form['Character']}, {request.form['Weapon']}, or {request.form['Location']}")
     return "1"
 

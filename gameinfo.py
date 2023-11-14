@@ -39,10 +39,14 @@ class Player:
     def selectCharacter(self, character):
         #I switched to having character set here as it makes more sense codewise
         self.character = character
+        print("here", character)
 
     def sendMessage(self, Player, message):
         #This will send the message to a specified player
         pass
+
+    def getPlayerCharacter(self):
+        return self.character
 
     def getPlayerCards(self):
         #This will return the cards the player has

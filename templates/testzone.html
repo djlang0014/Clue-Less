@@ -8,24 +8,29 @@
     <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.0/socket.io.js"></script>
 
     <script>
-        var socket;            
+        var socket;  
+        var x = 1;   
+        var playername;
+        var playercharacter;       
         $(document).ready(function() {
             // The http vs. https is important. Use http for localhost!
             socket = io.connect('http://' + document.domain + ':' + location.port);
             
-            document.getElementById("submittest").onclick = function(){
+            document.getElementById("getinfo").onclick = function(){
                 // Get the text value
                 var text = document.getElementById("testo").value;
 
                 // Emit a message to the 'send_message' socket
-                socket.emit('message', {'text':text});
+                socket.emit('request_player_info', {'text':text});
 
                 // Set the textfield input to empty
                 document.getElementById("testo").value = "";
             }
 
-            document.getElementById("getinfo").onclick = function(){
-                socket.emit('request_player_info');
+            document.getElementById("charactersubmit").onclick = function() {
+                event.preventDefault();
+                var location = document.querySelector('input[name="Location2"]:checked').value;
+                socket.emit('move_character', {'character':playercharacter, 'location':location})
             }
 
             // Message recieved from server
@@ -37,21 +42,29 @@
             socket.on('playerinfo', function(data) {
                 console.log(data);
                 playername = data['playername'];
-                playercharacter = data['playercharacter'];
+                playercharacter = data['character'];
                 document.getElementById('playerinfooutput').innerText = "Player Name: " + playername + "\nPlayer Character: " + playercharacter;
             });
 
             socket.on('playercard', function(data){
-                var outputlist = document.getElementById("cardoutput");
-                outputlist.innerHTML = '';
-
-                data.forEach(function(item){
-                    var li = document.createElement("li");
-                    li.textContent = item;
-                    outputlist.appendChild(li);
-                });
-
+                if (x == 1){
+                    document.getElementById('cardoutput').innerText += "\n";
+                    x = 0;
+                }
+                document.getElementById('cardoutput').innerText += data['cardtype'] +", " + data['cardname'] + "\n";
             });
+
+            socket.on('movecharacter', function(data){
+                var character = data['character'];
+                var location = data['location'];
+                var newPosition = locations[location];
+                var movingImage = document.getElementById(character);
+                movingImage.style.top = newPosition.top + "px";
+                movingImage.style.left = newPosition.left + "px";
+            });
+
+
+
 
 
         });
@@ -151,10 +164,11 @@
 
 
     <div class = "characterinfo">
+        <input id = "testo" type = "text" style = "display: none;"></input>
         <input id = "getinfo" type = "button">Load</input>
         <p>Player Info: </p>
         <div id = "playerinfooutput"></div>
-        <ul id = "cardoutput"></ul>
+        <div id = "cardoutput">Card Type, Card Name</div>
     </div>
 
     <div class = "movebutton">
@@ -219,20 +233,20 @@
     </div>
 
     <div id = "moveRadio" class = "radio-list-move">
-        <form method = "post" action = "/movesubmit" target = "hidden-iframe" id = "positionForm">
+        <form id = "positionForm">
             <h3>Location</h3>
             <label>
-                <input type="radio" name="Location" value="Kitchen"> Kitchen
-                <input type="radio" name="Location" value="Study"> Study
-                <input type="radio" name="Location" value="Billiard"> Billiard Room
-                <input type="radio" name="Location" value="Lounge"> Lounge
-                <input type="radio" name="Location" value="Library"> Library
-                <input type="radio" name="Location" value="Conservatory"> Conservatory
-                <input type="radio" name="Location" value="Hall"> Hall
-                <input type="radio" name="Location" value="Ballroom"> Ballroom
-                <input type="radio" name="Location" value="Dining"> Dining Room
+                <input type="radio" name="Location2" value="Kitchen"> Kitchen
+                <input type="radio" name="Location2" value="Study"> Study
+                <input type="radio" name="Location2" value="Billiard"> Billiard Room
+                <input type="radio" name="Location2" value="Lounge"> Lounge
+                <input type="radio" name="Location2" value="Library"> Library
+                <input type="radio" name="Location2" value="Conservatory"> Conservatory
+                <input type="radio" name="Location2" value="Hall"> Hall
+                <input type="radio" name="Location2" value="Ballroom"> Ballroom
+                <input type="radio" name="Location2" value="Dining"> Dining Room
             </label>
-            <input type = "submit" value = "Submit">
+            <input type = "submit" value = "Submit" id = "movesubmit">
         </form>
     </div>
     
@@ -381,6 +395,7 @@
         // Event listener for the Suggest form submit button
         document.getElementById('suggestForm').addEventListener('submit', function(event) {
             event.preventDefault();
+            //This needs to be sent to everyone else, so we will need to emit it to the server
             openSuggestModal();
             // You can add additional logic here if needed
         });
