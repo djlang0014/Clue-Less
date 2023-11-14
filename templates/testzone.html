@@ -27,10 +27,19 @@
                 document.getElementById("testo").value = "";
             }
 
-            document.getElementById("charactersubmit").onclick = function() {
+            document.getElementById("movesubmit").onclick = function() {
                 event.preventDefault();
                 var location = document.querySelector('input[name="Location2"]:checked').value;
-                socket.emit('move_character', {'character':playercharacter, 'location':location})
+                socket.emit('move_character', {'character':playercharacter, 'location':location});
+            }
+
+            document.getElementById("end-turn-button").onclick = function() {
+                event.preventDefault();
+                document.getElementById("move-button").disabled = true;
+                document.getElementById("suggest-button").disabled = true;
+                document.getElementById("accuse-button").disabled = true;
+                document.getElementById("end-button").disabled = true;
+                socket.emit('end_turn');
             }
 
             // Message recieved from server
@@ -63,9 +72,19 @@
                 movingImage.style.left = newPosition.left + "px";
             });
 
+            socket.on('next_turn', function(data) {
+                var text = data['text'];
+                document.getElementById("chat").innerHTML += "Server: " + text + "\n\n";   
+            });
 
-
-
+            socket.on('your_turn', function(data) {
+                var text = data['text'];
+                document.getElementById("chat").innerHTML += "Server: " + text + "\n\n";   
+                document.getElementById("move-button").disabled = false;
+                document.getElementById("suggest-button").disabled = false;
+                document.getElementById("accuse-button").disabled = false;
+                document.getElementById("end-button").disabled = false;
+            });
 
         });
 
@@ -173,21 +192,19 @@
 
     <div class = "movebutton">
         <!--This will have to be changed to selecting the location to move to-->
-        <button onclick = "showMoveList()">Move</button>
+        <button onclick = "showMoveList()" id="move-button">Move</button>
     </div>
 
     <div class = "suggestbutton">
-        <button onclick = "showSuggestList()">Suggest</button>
+        <button onclick = "showSuggestList()" id="suggest-button">Suggest</button>
     </div>
-    <div class = "disprovebutton">
-        <button onclick = "showSuggestList()">Suggest</button>
-    </div>
+
     <div class = "accusebutton">
-        <button onclick = "showAccuseList()">Accuse</button>
+        <button onclick = "showAccuseList()" id="accuse-button">Accuse</button>
     </div>
 
     <div class = "endbutton">
-        <button onclick = "showEndTurn()">End Turn</button>
+        <button onclick = "showEndTurn()" id="end-button">End Turn</button>
     </div>
 
     <div id = "serverchat" class = "serverchat">
@@ -333,7 +350,7 @@
     <div id = "endTurnContainer" class = "endTurnContainer">
         <form method = "post" action = "/endturnsubmit" target = "hidden-iframe">
             <h1>Are you sure?</h1>
-            <input type = "submit" value = "End Turn">
+            <input type = "submit" value = "End Turn" id="end-turn-button">
         </form>
     
     <div class = "output">
