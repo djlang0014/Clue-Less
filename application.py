@@ -91,6 +91,8 @@ application.secret_key = os.urandom(24)
 #    return render_template('index.html')
 
 # Receive a message from the front end HTML
+
+
 @socketio.on('send_message')   
 def message_recieved(data, buttonnum):
     match buttonnum:

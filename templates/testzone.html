@@ -58,6 +58,11 @@
                 socket.emit('move_character', {'character':playercharacter, 'location':location})
             }
 
+            document.getElementById("").onclick = function() {
+                event.preventDefault();
+                var location = document.querySelector('input[name="Location2"]:checked').value;
+                socket.emit('move_character', {'character':playercharacter, 'location':location})
+            }
             // Message recieved from server
             socket.on('message_from_server', function(data) {
                 var text = data['text'];
@@ -358,7 +363,7 @@
                         <input type="radio" name="Location" value="Ballroom"> Ballroom
                         <input type="radio" name="Location" value="Dining"> Dining Room
                     </label>
-                    <input type = "submit" value = "Submit">
+                    <input id="closeModalButton" type = "submit" value = "Submit">
                 </form>
             </div>
         </div>
@@ -428,9 +433,11 @@
         // Event listener for the Suggest form submit button
         document.getElementById('suggestForm').addEventListener('submit', function(event) {
             event.preventDefault();
-            //This needs to be sent to everyone else, so we will need to emit it to the server
             openSuggestModal();
-            // You can add additional logic here if needed
+            
+        });
+        document.getElementById('closeModalButton').addEventListener('click', function() {
+            closeSuggestModal();
         });
         function moveImage() {
             var selectedPosition = document.querySelector('input[name="Location"]:checked').value;
