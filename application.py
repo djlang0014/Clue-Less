@@ -226,8 +226,9 @@ def on_game_start(data):
     cardWeaponStack = cardWeaponList
     caseFile = CaseFile(cardCharacterStack.pop(), cardWeaponStack.pop() ,cardLocationStack.pop())
     global gameInstance 
-    gameInstance = gameRooms[roomCode]
     gameRooms[roomCode].caseFile = caseFile
+    gameInstance = gameRooms[roomCode]
+    
 
     for player in gameRooms[roomCode].players:
         player.addPlayerCard(cardLocationStack.pop())
@@ -235,15 +236,18 @@ def on_game_start(data):
         player.addPlayerCard(cardWeaponStack.pop())
 
     socketio.emit("start_game_all", {'url': url_for('testzone')}, to=roomCode)
+    
 
 @socketio.on('request_player_info')
 def request_player_info(data):
+    caseFile = gameInstance.caseFile
+    #socketio.emit("casefilebackdoor", {'location': caseFile.room.cardName, 'suspect': caseFile.suspect.cardName, 'weapon': caseFile.weapon.cardName}, to=request.sid)
     user_id = session['user_id']
     player = playerDict[user_id]
     print(player.getPlayerCharacter())
     socketio.emit("playerinfo", {'playername': player.getPlayerName(), 'character': player.getPlayerCharacter()}, to=request.sid)
     playerCards = player.getPlayerCards()
-    
+
     for card in playerCards:
         socketio.emit("playercard", {'cardtype': card.cardType, 'cardname': card.cardName}, to=request.sid)
     
@@ -316,7 +320,26 @@ def movecharacter(data):
         socketio.emit('movecharacter', {'character': character, 'location': newLocation})
     else:
         socketio.emit('message_from_server', {'text': character + ' cannot move there.'})
-    
+
+@socketio.on('accusation')
+def accusation(data):
+    accuseWeapon = data['weapon']
+    accuseSuspect = data['suspect']
+    accuseRoom = data['room']
+    player = playerDict[session['user_id']]
+    name = player.name
+
+    caseWeapon = gameInstance.caseFile.weapon
+    caseSuspect = gameInstance.caseFile.suspect
+    caseRoom = gameInstance.caseFile.room
+
+    accusationString = "" + accuseWeapon + ", " + accuseSuspect + ", " + accuseRoom + "."
+
+    if accuseWeapon == caseWeapon and accuseSuspect == caseSuspect and accuseRoom == caseRoom:
+        socketio.emit('message_from_server', {'text': name + ' wins!'})
+    else:
+        gameInstance.players.remove(player)
+        socketio.emit('message_from_server', {'text': name + ' was incorrect. They guessed: ' + accusationString})
     
 
 
