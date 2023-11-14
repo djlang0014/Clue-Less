@@ -11,7 +11,32 @@
         var socket;  
         var x = 1;   
         var playername;
-        var playercharacter;       
+        var playercharacter; 
+
+        var locations = {
+            study: {top:235 , left: 225},
+            Hall1: {top:215, left: 350},
+            Hall: {top:215, left: 470},
+            Hall2: {top:215, left: 610},
+            Lounge: {top:215, left: 730},
+            Hall3: {top:315, left: 225},
+            Hall4: {top:315, left: 470},
+            Hall5: {top:315, left: 730},
+            Library: {top:415, left: 225},
+            Hall6: {top:415, left:350},
+            Billiard: {top:415, left:470},
+            Hall7: {top:415, left:610},
+            Dining: {top:415, left:730},
+            Hall8: {top:540, left: 225},
+            Hall9: {top:540, left: 470},
+            Hall10: {top:540, left: 730},
+            Conservatory: {top:640, left: 225},
+            Hall11: {top:640, left: 350},
+            Ballroom: {top:640, left: 470},
+            Hall12: {top:640, left: 610},
+            Kitchen: {top:640, left: 730}
+        }
+
         $(document).ready(function() {
             // The http vs. https is important. Use http for localhost!
             socket = io.connect('http://' + document.domain + ':' + location.port);
@@ -27,7 +52,7 @@
                 document.getElementById("testo").value = "";
             }
 
-            document.getElementById("charactersubmit").onclick = function() {
+            document.getElementById("movesubmit").onclick = function() {
                 event.preventDefault();
                 var location = document.querySelector('input[name="Location2"]:checked').value;
                 socket.emit('move_character', {'character':playercharacter, 'location':location})
@@ -151,12 +176,12 @@
 
     </div>
     <div class ="wrapper">
-        <div class="green" id="MrGreen" style="top: 680px; left: 330px;"></div>
-        <div class="red"  style="top: 180px; left: 590px;"></div>
-        <div class="blue"  style="top: 550px; left: 170px;"></div>
-        <div class="purple"  style="top: 310px; left: 170px;"></div>
-        <div class="white"  style="top: 680px; left: 590px;"></div>
-        <div class="yellow"  style="top: 310px; left: 750px;"></div>
+        <div class="green" id="Mr. Green" style="top: 680px; left: 330px;"></div>
+        <div class="red"  id = "Miss Scarlet" style="top: 180px; left: 590px;"></div>
+        <div class="blue" id = "Mrs. Peacock" style="top: 550px; left: 170px;"></div>
+        <div class="purple" id = "Prof. Plum" style="top: 310px; left: 170px;"></div>
+        <div class="white" id = "Mrs. White" style="top: 680px; left: 590px;"></div>
+        <div class="yellow" id = "Col. Mustard" style="top: 310px; left: 750px;"></div>
     </div>
     <div class ="rightcol"> 
         
@@ -213,8 +238,6 @@
                 <input type="radio" name="Character" value="Col Mustard"> Col. Mustard 
                 <input type="radio" name="Character" value="Mr. Green"> Mr. Green
                 <input type="radio" name="Character" value="Prof Plum"> Prof Plum 
-                <input type="radio" name="Character" value="Dr. Orchid"> Dr. Orchid 
-                <input type="radio" name="Character" value="Miss Peach"> Miss Peach 
             </label>
             <h3>Location</h3>
             <label>
@@ -236,15 +259,27 @@
         <form id = "positionForm">
             <h3>Location</h3>
             <label>
-                <input type="radio" name="Location2" value="Kitchen"> Kitchen
                 <input type="radio" name="Location2" value="Study"> Study
-                <input type="radio" name="Location2" value="Billiard"> Billiard Room
-                <input type="radio" name="Location2" value="Lounge"> Lounge
-                <input type="radio" name="Location2" value="Library"> Library
-                <input type="radio" name="Location2" value="Conservatory"> Conservatory
+                <input type="radio" name="Location2" value="Hall1"> Hall1
                 <input type="radio" name="Location2" value="Hall"> Hall
-                <input type="radio" name="Location2" value="Ballroom"> Ballroom
+                <input type="radio" name="Location2" value="Hall2"> Hall2
+                <input type="radio" name="Location2" value="Lounge"> Lounge
+                <input type="radio" name="Location2" value="Hall3"> Hall3
+                <input type="radio" name="Location2" value="Hall4"> Hall4
+                <input type="radio" name="Location2" value="Hall5"> Hall5
+                <input type="radio" name="Location2" value="Library"> Library
+                <input type="radio" name="Location2" value="Hall6"> Hall6
+                <input type="radio" name="Location2" value="Billiard"> Billiard Room
+                <input type="radio" name="Location2" value="Hall7"> Hall7
                 <input type="radio" name="Location2" value="Dining"> Dining Room
+                <input type="radio" name="Location2" value="Hall8"> Hall8
+                <input type="radio" name="Location2" value="Hall9"> Hall9
+                <input type="radio" name="Location2" value="Hall10"> Hall10
+                <input type="radio" name="Location2" value="Conservatory"> Conservatory 
+                <input type="radio" name="Location2" value="Hall11"> Hall11               
+                <input type="radio" name="Location2" value="Ballroom"> Ballroom
+                <input type="radio" name="Location2" value="Hall12"> Hall12
+                <input type="radio" name="Location2" value="Kitchen"> Kitchen
             </label>
             <input type = "submit" value = "Submit" id = "movesubmit">
         </form>
@@ -260,8 +295,6 @@
                 <input type="radio" name="Character" value="Col Mustard"> Col. Mustard 
                 <input type="radio" name="Character" value="Mr. Green"> Mr. Green
                 <input type="radio" name="Character" value="Prof Plum"> Prof Plum 
-                <input type="radio" name="Character" value="Dr. Orchid"> Dr. Orchid 
-                <input type="radio" name="Character" value="Miss Peach"> Miss Peach 
             </label>
             <h3>Weapon</h3>
             <label>

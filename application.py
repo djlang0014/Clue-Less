@@ -174,7 +174,6 @@ def on_create(data):
     new_player = Player(username, user_id)
     playerList.append(new_player)
     playerDict[user_id] = new_player
-    print(new_player.name)
     #Create unique game/roomCode
     while True:
         roomCode = ''.join(random.choice(ROOM_CODE_CHARS) for i in range(6))
@@ -247,6 +246,22 @@ def request_player_info(data):
     for card in playerCards:
         socketio.emit("playercard", {'cardtype': card.cardType, 'cardname': card.cardName}, to=request.sid)
     
+    for player in gameInstance.players:
+        match player.getPlayerCharacter():
+            case "Miss Scarlet":
+                gameInstance.setPlayerStartLocation(player.sid, 'ScarletStart')
+            case "Col. Mustard":
+                gameInstance.setPlayerStartLocation(player.sid, 'MustardStart')
+            case "Mrs. White":
+                gameInstance.setPlayerStartLocation(player.sid, 'WhiteStart')
+            case "Mr. Green":
+                gameInstance.setPlayerStartLocation(player.sid, 'GreenStart')
+            case "Mrs. Peacock":
+                gameInstance.setPlayerStartLocation(player.sid, 'PeacockStart')
+            case "Prof. Plum":
+                gameInstance.setPlayerStartLocation(player.sid, 'PlumStart')
+
+    
 
 @socketio.on('select_character')
 def select_character(data):
@@ -290,10 +305,18 @@ def accusesubmit():
 
 @socketio.on('move_character')
 def movecharacter(data):
-    newLocation = data['Location']
+    newLocation = data['location']
     character = data['character']
     player = playerDict[session['user_id']]
-    player.changePlayerLocation(newLocation)
+    
+    num = gameInstance.changePlayerLocation(player.sid, newLocation)
+
+    if num == 1:
+        socketio.emit('movecharacter', {'character': character, 'location': newLocation})
+    else:
+        socketio.emit('message_from_server', {'text': character + ' cannot move there.'})
+    
+    
 
 
 @application.route('/suggestsubmit', methods = ['POST'])

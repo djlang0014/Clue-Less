@@ -65,25 +65,31 @@ class GameInstance:
             'Hall2': {'type': 'hallway', 'adjacent_units': ['Hall', 'Lounge']},
             'Lounge': {'type': 'room', 'adjacent_units': ['Hall2', 'Hall5', 'Conservatory']},
             'Hall3': {'type': 'hallway', 'adjacent_units': ['Study', 'Library']},
-            'Hall4': {'type': 'hallway', 'adjacent_units': ['Hall', 'Billiard Room']},
-            'Hall5': {'type': 'hallway', 'adjacent_units': ['Lounge', 'Dining Room']},
+            'Hall4': {'type': 'hallway', 'adjacent_units': ['Hall', 'Billiard']},
+            'Hall5': {'type': 'hallway', 'adjacent_units': ['Lounge', 'Dining']},
             'Library': {'type': 'room', 'adjacent_units': ['Hall3', 'Hall6', 'Hall8']},
-            'Hall6': {'type': 'hallway', 'adjacent_units': ['Library', 'Billiard Room']},
-            'Billiard Room': {'type': 'room', 'adjacent_units': ['Hall4', 'Hall6', 'Hall7', 'Hall9']},
-            'Hall7': {'type': 'hallway', 'adjacent_units': ['Billiard Room', 'Dining Room']},
-            'Dining Room': {'type': 'room', 'adjacent_units': ['Hall5', 'Hall7', 'Hall10']},
+            'Hall6': {'type': 'hallway', 'adjacent_units': ['Library', 'Billiard']},
+            'Billiard': {'type': 'room', 'adjacent_units': ['Hall4', 'Hall6', 'Hall7', 'Hall9']},
+            'Hall7': {'type': 'hallway', 'adjacent_units': ['Billiard', 'Dining']},
+            'Dining': {'type': 'room', 'adjacent_units': ['Hall5', 'Hall7', 'Hall10']},
             'Hall8': {'type': 'hallway', 'adjacent_units': ['Library', 'Conservatory']},
-            'Hall9': {'type': 'hallway', 'adjacent_units': ['Billiard Room', 'Ballroom']},
-            'Hall10': {'type': 'hallway', 'adjacent_units': ['Dining Room', 'Kitchen']},
+            'Hall9': {'type': 'hallway', 'adjacent_units': ['Billiard', 'Ballroom']},
+            'Hall10': {'type': 'hallway', 'adjacent_units': ['Dining', 'Kitchen']},
             'Conservatory': {'type': 'room', 'adjacent_units': ['Lounge', 'Hall8', 'Hall11']},
             'Hall11': {'type': 'hallway', 'adjacent_units': ['Conservatory', 'Ballroom']},
             'Ballroom': {'type': 'room', 'adjacent_units': ['Hall9', 'Hall11', 'Hall12']},
             'Hall12': {'type': 'hallway', 'adjacent_units': ['Ballroom', 'Kitchen']},
             'Kitchen': {'type': 'room', 'adjacent_units': ['Study', 'Hall10', 'Hall12']},
+            'ScarletStart': {'type': 'start', 'adjacent_units': ['Hall2']},
+            'MustardStart': {'type': 'start', 'adjacent_units': ['Hall5']},
+            'WhiteStart': {'type': 'start', 'adjacent_units': ['Hall12']},
+            'GreenStart': {'type': 'start', 'adjacent_units': ['Hall11']},
+            'PeacockStart': {'type': 'start', 'adjacent_units': ['Hall8']},
+            'PlumStart': {'type': 'start', 'adjacent_units': ['Hall3']}
             }
         return board
     
-    def changePlayerLocation(self, playerID, location):
+    def changePlayerLocation(self, sessionID, location):
         board = self.getLocationList()
 
         # call self.getPlayerLocation and retrieve player location
@@ -93,7 +99,8 @@ class GameInstance:
         potential_locations = dict(potential_locations)
 
         if location in potential_locations :
-            self.playerLocations[playerID] = location
+            self.playerLocations[sessionID] = location
+            return 1
         else :
             # TODO: Pop up to let user know they can't move there?
             return 0
@@ -119,3 +126,6 @@ class GameInstance:
     
     def getPlayerLocation(self, playerID):
         return self.playerLocations[playerID]
+
+    def setPlayerStartLocation(self, playerID, location):
+        self.playerLocations[playerID] = location
