@@ -10,7 +10,8 @@
 
     <!-- Script to handle socket.io -->
     <script>
-        var socket;            
+        var socket;        
+        var roomCode;    
         $(document).ready(function() {
             // The http vs. https is important. Use http for localhost!
             socket = io.connect('http://' + document.domain + ':' + location.port);
@@ -26,22 +27,53 @@
                 document.getElementById("username").value = "";
             }
 
+            document.getElementById("start-button").onclick = function() {
+
+                // Send start game signal
+                socket.emit('start_game', {'roomCode':roomCode})
+            }
+
+            document.getElementById("charactersubmit").onclick = function() {
+                event.preventDefault();
+                var charname = document.querySelector('input[name="Character"]:checked').value;
+                document.getElementById("player-form").style.display = "none";
+                document.getElementById("afterselection").style.display = "block";
+                socket.emit('select_character', {'character':charname, 'roomCode':roomCode})
+            }
+
             // Message recieved from server
             socket.on('room_code', function(data) {
-                var text = data['text'];
-                document.getElementById("code").innerHTML = "Your Lobby code is: " + text;   
+                roomCode = data['text'];
+                document.getElementById("code").innerHTML = "Your Lobby code is: " + roomCode;   
                 //Remove Create button
                 document.getElementById("button-div").style.display = 'none';
                 //Show player form
                 document.getElementById("player-form").style.display = "block";
                 document.getElementById("lobby-tracker").style.display = "block";
+                document.getElementById("start-game-div").style.display = "block";
             });
 
             // Update number of players in lobby
             socket.on('players_in_lobby', function(data) {
                 var num = data['num'];
                 document.getElementById("num-players").innerHTML = num;
-            });    
+            });   
+            
+            socket.on('to_host', function(data) {
+                var text = data['text'];
+                document.getElementById("host-test").innerHTML = text;
+            });
+
+            // Host has started Game
+            socket.on('start_game_all', function(data) {
+                window.location = data.url
+            });
+
+            socket.on('disable_character', function(data){
+                document.getElementById(data.character).disabled = true;
+                
+            });
+
 
         });
     </script>
@@ -51,10 +83,11 @@
     <div class="menu-container" style="max-width:600px">
         <h1 class="game-title">Welcome to Clue-Less</h1>
         <h2 class="game-title" id="code"> </h2>
+        <h3 class="game-text" id="host-test"> </h3>
         <div id="button-div" style="text-align:center">
             <label for="username" class="game-text">Please enter your username: </label>
             <input type="text" id="username" name="username"><br>
-            <input id="create" type="submit" value="Create New Game"/>
+            <input id="create" type="submit" value="Create New Game" class="game-text" style="color: #000;"/>
         </div>
         <div id="lobby-tracker" style="display:none">
             <p class="game-text">The number of players in the lobby is:</p>
@@ -63,15 +96,24 @@
     </div>
     <br>           
     <div id="player-form" class="menu-container" style="display:none; text-align:left">
-        <form>
+        <form id = "selection">
             <p  class="game-text">Please choose a character:</p>
-            {% for character in character_list %}
-                <input type="radio" id="{{character}}" name="player_character" value="{{character}}">
-                <label for="{{character}}" class="game-text">{{character}}</label><br>
-            {% endfor %}
-            <input id="submit-player-form" type="submit" value="Register Player"/>
+            <label class = "game-text">
+                <input type="radio" name="Character" value="Miss Scarlet" id = "Miss Scarlet"> Miss Scarlet
+                <input type="radio" name="Character" value="Mrs. Peacock" id = "Mrs. Peacock"> Mrs. Peacock 
+                <input type="radio" name="Character" value="Mrs. White"  id = "Mrs. White"> Mrs. White 
+                <input type="radio" name="Character" value="Col. Mustard"  id = "Col Mustard"> Col. Mustard 
+                <input type="radio" name="Character" value="Mr. Green"  id = "Mr. Green"> Mr. Green
+                <input type="radio" name="Character" value="Prof Plum"  id = "Prof Plum"> Prof Plum 
+            </label>
+            <input id="charactersubmit" type="submit" value="Register Character" class="game-text" style="color: #000;" />    
         </form> 
-    </div> 
-
+    </div>  
+    <div id = "afterselection" class = "menu-container" style="display:none;">
+        <p class = "game-text">You have selected a character</p>
+    </div>
+    <div id="start-game-div" class="menu-container" style="display:none; margin-top:20px;">
+        <input id="start-button" type="submit" class="game-text" style="color: #000;" value="Begin Game"/>
+    </div>
 </body>
 </html>

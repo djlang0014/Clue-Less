@@ -23,8 +23,9 @@ class Location:
         pass
 
 class Player:
-    def __init__(self, name):
+    def __init__(self, name, sessionID=None, playerID = None):
         self.name = name
+        self.sid = sessionID
         self.playerID = None
         self.character = None
         self.cards = [] #Cards will be set in driver code
@@ -38,20 +39,28 @@ class Player:
     def selectCharacter(self, character):
         #I switched to having character set here as it makes more sense codewise
         self.character = character
+        print("here", character)
 
     def sendMessage(self, Player, message):
         #This will send the message to a specified player
         pass
 
+    def getPlayerCharacter(self):
+        return self.character
+
     def getPlayerCards(self):
         #This will return the cards the player has
-        pass
+        return self.cards
 
     def getPlayerName(self):
         return self.name
+    
+    def addPlayerCard(self, card):
+        self.cards.append(card)
+
 
 class Card:
-    def __init__(self, cardType, cardName, cardID):
+    def __init__(self, cardType, cardName, cardID=None):
         self.cardType = cardType
         self.cardName = cardName
         self.cardID = cardID
