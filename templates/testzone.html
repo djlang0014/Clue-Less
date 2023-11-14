@@ -87,6 +87,11 @@
 
             }
 
+            document.getElementById("end-turn-button").onclick = function() {
+                event.preventDefault();
+                socket.emit('end_turn');
+            }
+
             // Message recieved from server
             socket.on('message_from_server', function(data) {
                 var text = data['text'];
