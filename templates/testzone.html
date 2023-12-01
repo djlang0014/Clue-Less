@@ -227,6 +227,83 @@
             font-size: 20px;
             cursor: pointer;
         }
+        .card-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 100vh;
+            }
+
+        .card {
+            transition: transform 0.3s ease; /* Smooth transition on hover */
+            cursor: pointer; /* Change cursor to pointer */
+            filter: brightness(100%); /* Reset brightness for non-selected cards */
+        }
+        .card:hover {
+            transform: scale(1.1); /* Scale up the card on hover */
+            z-index: 1; /* Bring the hovered card to the front */
+        }
+        #ballroom{
+            margin-top: 50px;
+            width: 98%; /* Set card dimensions */
+            height: 275%;
+            background-image:url('static/Cards/Rooms/ballroom.png')
+        }
+        #hall{
+            margin-top: -100px;
+            margin-left: 50px;
+            width: 98%; /* Set card dimensions */
+            height: 275%;
+            background-image:url('static/Cards/Rooms/hall.png')
+        }
+        #billardroom{
+            margin-top: -270px;
+            margin-left: 250px;
+            width: 98%; /* Set card dimensions */
+            height: 275%;
+            background-image:url('static/Cards/Rooms/billard_room.png')
+        }
+        #conservatory{
+            margin-top: -200px;
+            margin-left: 100px;
+            width: 98%; /* Set card dimensions */
+            height: 275%;
+            background-image:url('static/Cards/Rooms/conservatory.png')
+        }
+        #diningroom{
+            margin-top: -400px;
+            margin-left: 150px;
+            width: 98%; /* Set card dimensions */
+            height: 275%;
+            background-image:url('static/Cards/Rooms/dining_room.png')
+        }
+        #kitchen{
+            margin-top: -750px;
+            width: 98%; /* Set card dimensions */
+            height: 275%;
+            background-image:url('static/Cards/Rooms/kitchen.png')
+        }
+        #library{
+            margin-top: -750px;
+            width: 98%; /* Set card dimensions */
+            height: 275%;
+            background-image:url('static/Cards/Rooms/library.png')
+        }
+        #lounge{
+            margin-top: -750px;
+            width: 98%; /* Set card dimensions */
+            height: 275%;
+            background-image:url('static/Cards/Rooms/lounge.png')
+        }
+        #studyroom{
+            margin-top: -750px;
+            width: 98%; /* Set card dimensions */
+            height: 275%;
+            background-image:url('static/Cards/Rooms/study.png')
+        }
+        .selected {
+        filter: brightness(70%); /* Adjust brightness for selected card */
+        }
     </style>
     
 </head>
@@ -241,6 +318,8 @@
         <div class="purple" id = "Prof. Plum" style="top: 310px; left: 170px;"></div>
         <div class="white" id = "Mrs. White" style="top: 680px; left: 590px;"></div>
         <div class="yellow" id = "Col. Mustard" style="top: 310px; left: 750px;"></div>
+
+        <div class="room" id="study"></div>
     </div>
     <div class ="rightcol"> 
         
@@ -313,10 +392,28 @@
     </div>
 
     <div id = "moveRadio" class = "radio-list-move">
+        <div class="card" id="ballroom" value="Ballroom"></div>
+        <div class="card" id="hall" value="Hall"></div>
+        <div class="card" id="conservatory" value="conservatory"></div>
+        <div class="card" id="diningroom" value="diningroom"></div>
+        <div class="card" id="billardroom" value="billardroom"></div>
+   
+        <div class="card" id="kitchen" value="kitchen"></div>
+        <div class="card" id="library" value="library"></div>
+        <div class="card" id="lounge" value="lounge"></div>
+        <div class="card" id="studyroom" value="studyroom"></div>
+    </div>
+
+    <div id = "moveRadio" class = "radio-list-move">
+        
         <form id = "positionForm">
+            
             <h3>Location</h3>
+                
             <label>
-                <input type="radio" name="Location2" value="Study"> Study
+                <div align="center" class="card" id="ballroom" value="Ballroom"></div>
+                <div align="center" class="card" id="hall" value="Hall"></div>
+                
                 <input type="radio" name="Location2" value="Hall1"> Hall1
                 <input type="radio" name="Location2" value="Hall"> Hall
                 <input type="radio" name="Location2" value="Hall2"> Hall2
@@ -443,6 +540,65 @@
 
         document.onmousemove=getCursorPos;
         var output = document.getElementById('output');
+        
+        
+        const cards = document.querySelectorAll('.card, .ballroom, .hall');
+        let selectedCard = null;
+
+        function handleCardHover(event) {
+        event.target.style.transform = 'scale(1.1) ';
+        event.target.style.transform ='translateY(-200px)';
+        }
+
+        function handleCardLeave(event) {
+        if (event.target !== selectedCard) {
+            event.target.style.transform = 'scale(1)';
+        }
+        }
+
+        function handleCardClick(event) {
+        if (selectedCard === event.target) {
+            // If the clicked card is already selected, deselect it
+            selectedCard.classList.remove('selected');
+            selectedCard = null;
+        } else {
+            // Deselect the previously selected card
+            if (selectedCard !== null) {
+            selectedCard.classList.remove('selected');
+            }
+            // Select the clicked card
+            selectedCard = event.target;
+            selectedCard.classList.add('selected');
+        }
+        }
+
+        cards.forEach(card => {
+        card.addEventListener('mouseenter', handleCardHover);
+        card.addEventListener('mouseleave', handleCardLeave);
+        card.addEventListener('click', handleCardClick);
+        });
+
+
+        // Function to move the sprite to a specific room
+        function moveToRoom(roomId) {
+            const room = document.getElementById(roomId);
+            const player = document.getElementById('player');
+            const roomRect = room.getBoundingClientRect(); // Get room's position and size
+
+            // Calculate the target position (center of the room)
+            const targetX = roomRect.left + roomRect.width / 2 - player.offsetWidth / 2;
+            const targetY = roomRect.top + roomRect.height / 2 - player.offsetHeight / 2;
+
+            // Apply transition to animate the sprite's movement
+            player.style.transition = 'top 1s, left 1s';
+            player.style.top = `${targetY}px`;
+            player.style.left = `${targetX}px`;
+
+            // Remove the transition after the movement is complete
+            setTimeout(() => {
+                player.style.transition = '';
+            }, 1000); // Adjust the timing to match the transition duration
+        }
         function getCursorPos(a)
         {
         var posx = a.clientX;

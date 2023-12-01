@@ -32,9 +32,14 @@ body {
     position: relative;
     width: 21px; 
     height: 35px;  
-    background-image: url('characters/board_sprites/single_scarlet.png');
+    background-image: url('characters/board_sprites/scarlet.png');
     background-size: cover; 
     position: absolute; 
+}
+.scarlet{
+    background-image: url('spritesheet.png');
+    width: 25px;
+    height: 31px;
 }
 .blue{
     position: relative;
