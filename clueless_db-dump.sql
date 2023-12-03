@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 16.0
--- Dumped by pg_dump version 16.0
+-- Dumped from database version 16.1
+-- Dumped by pg_dump version 16.1
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -25,10 +25,8 @@ SET default_table_access_method = heap;
 --
 
 CREATE TABLE public.locations (
-    location_id integer NOT NULL,
-    location_name character varying(50),
-    player_count integer DEFAULT 0,
-    restricted boolean DEFAULT false
+    location_name character varying NOT NULL,
+    is_restricted boolean DEFAULT false
 );
 
 
@@ -53,34 +51,21 @@ ALTER SEQUENCE public.board_locations_location_id_seq OWNER TO postgres;
 -- Name: board_locations_location_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public.board_locations_location_id_seq OWNED BY public.locations.location_id;
+ALTER SEQUENCE public.board_locations_location_id_seq OWNED BY public.locations.location_name;
 
-
---
--- Name: character_location_map; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.character_location_map (
-    junction_id integer NOT NULL,
-    player_id integer,
-    location_id integer
-);
-
-
-ALTER TABLE public.character_location_map OWNER TO postgres;
 
 --
 -- Name: game_session; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.game_session (
-    session_id integer NOT NULL,
-    active boolean NOT NULL,
+    session_id character varying NOT NULL,
+    is_active boolean NOT NULL,
     start_time timestamp without time zone NOT NULL,
     end_time timestamp without time zone,
     num_players integer,
     case_file integer[],
-    player_won integer
+    player_won character varying
 );
 
 
@@ -114,9 +99,9 @@ ALTER SEQUENCE public.game_info_game_id_seq OWNED BY public.game_session.session
 
 CREATE TABLE public.game_states (
     state_id integer NOT NULL,
-    game_id integer,
+    game_id character varying,
     "timestamp" timestamp without time zone NOT NULL,
-    current_player integer,
+    current_player character varying,
     game_data jsonb
 );
 
@@ -146,10 +131,38 @@ ALTER SEQUENCE public.game_states_state_id_seq OWNED BY public.game_states.state
 
 
 --
--- Name: player_location_junction_junction_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: player_location_map; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public.player_location_junction_junction_id_seq
+CREATE TABLE public.player_location_map (
+    map_id integer NOT NULL,
+    player_id character varying NOT NULL,
+    location_name character varying,
+    session_id character varying
+);
+
+
+ALTER TABLE public.player_location_map OWNER TO postgres;
+
+--
+-- Name: player_location_map_map_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.player_location_map_map_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.player_location_map_map_id_seq OWNER TO postgres;
+
+--
+-- Name: player_location_map_map_id_seq1; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.player_location_map_map_id_seq1
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -158,13 +171,13 @@ CREATE SEQUENCE public.player_location_junction_junction_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.player_location_junction_junction_id_seq OWNER TO postgres;
+ALTER SEQUENCE public.player_location_map_map_id_seq1 OWNER TO postgres;
 
 --
--- Name: player_location_junction_junction_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: player_location_map_map_id_seq1; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public.player_location_junction_junction_id_seq OWNED BY public.character_location_map.junction_id;
+ALTER SEQUENCE public.player_location_map_map_id_seq1 OWNED BY public.player_location_map.map_id;
 
 
 --
@@ -172,10 +185,10 @@ ALTER SEQUENCE public.player_location_junction_junction_id_seq OWNED BY public.c
 --
 
 CREATE TABLE public.players (
-    player_id integer NOT NULL,
+    player_id character varying NOT NULL,
     player_name character varying(50) NOT NULL,
     character_name character varying(50) NOT NULL,
-    session_id integer
+    session_id character varying
 );
 
 
@@ -204,13 +217,6 @@ ALTER SEQUENCE public.players_player_id_seq OWNED BY public.players.player_id;
 
 
 --
--- Name: character_location_map junction_id; Type: DEFAULT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.character_location_map ALTER COLUMN junction_id SET DEFAULT nextval('public.player_location_junction_junction_id_seq'::regclass);
-
-
---
 -- Name: game_session session_id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -225,10 +231,17 @@ ALTER TABLE ONLY public.game_states ALTER COLUMN state_id SET DEFAULT nextval('p
 
 
 --
--- Name: locations location_id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: locations location_name; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.locations ALTER COLUMN location_id SET DEFAULT nextval('public.board_locations_location_id_seq'::regclass);
+ALTER TABLE ONLY public.locations ALTER COLUMN location_name SET DEFAULT nextval('public.board_locations_location_id_seq'::regclass);
+
+
+--
+-- Name: player_location_map map_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.player_location_map ALTER COLUMN map_id SET DEFAULT nextval('public.player_location_map_map_id_seq1'::regclass);
 
 
 --
@@ -239,19 +252,10 @@ ALTER TABLE ONLY public.players ALTER COLUMN player_id SET DEFAULT nextval('publ
 
 
 --
--- Data for Name: character_location_map; Type: TABLE DATA; Schema: public; Owner: postgres
---
-
-COPY public.character_location_map (junction_id, player_id, location_id) FROM stdin;
-\.
-
-
---
 -- Data for Name: game_session; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.game_session (session_id, active, start_time, end_time, num_players, case_file, player_won) FROM stdin;
-1	t	2023-10-23 06:00:00	\N	1	{1,2,3}	\N
+COPY public.game_session (session_id, is_active, start_time, end_time, num_players, case_file, player_won) FROM stdin;
 \.
 
 
@@ -260,7 +264,6 @@ COPY public.game_session (session_id, active, start_time, end_time, num_players,
 --
 
 COPY public.game_states (state_id, game_id, "timestamp", current_player, game_data) FROM stdin;
-1	1	2023-10-23 13:16:00	\N	\N
 \.
 
 
@@ -268,7 +271,42 @@ COPY public.game_states (state_id, game_id, "timestamp", current_player, game_da
 -- Data for Name: locations; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.locations (location_id, location_name, player_count, restricted) FROM stdin;
+COPY public.locations (location_name, is_restricted) FROM stdin;
+Study	f
+Hall	f
+Hall2	t
+Lounge	f
+Hall3	t
+Hall4	t
+Hall5	t
+Library	f
+Hall6	t
+Billiard	f
+Hall7	t
+Dining	f
+Hall8	t
+Hall9	t
+Hall10	t
+Conservatory	f
+Hall11	t
+Ballroom	f
+Hall12	t
+Kitchen	f
+Hall1	t
+ScarletStart	f
+MustardStart	f
+WhiteStart	f
+GreenStart	f
+PeacockStart	f
+PlumStart	f
+\.
+
+
+--
+-- Data for Name: player_location_map; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.player_location_map (map_id, player_id, location_name, session_id) FROM stdin;
 \.
 
 
@@ -277,7 +315,6 @@ COPY public.locations (location_id, location_name, player_count, restricted) FRO
 --
 
 COPY public.players (player_id, player_name, character_name, session_id) FROM stdin;
-1	player	Miss Scarlet	\N
 \.
 
 
@@ -303,10 +340,17 @@ SELECT pg_catalog.setval('public.game_states_state_id_seq', 1, false);
 
 
 --
--- Name: player_location_junction_junction_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: player_location_map_map_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.player_location_junction_junction_id_seq', 1, false);
+SELECT pg_catalog.setval('public.player_location_map_map_id_seq', 1025, true);
+
+
+--
+-- Name: player_location_map_map_id_seq1; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.player_location_map_map_id_seq1', 128, true);
 
 
 --
@@ -321,7 +365,7 @@ SELECT pg_catalog.setval('public.players_player_id_seq', 1, false);
 --
 
 ALTER TABLE ONLY public.locations
-    ADD CONSTRAINT board_locations_pkey PRIMARY KEY (location_id);
+    ADD CONSTRAINT board_locations_pkey PRIMARY KEY (location_name);
 
 
 --
@@ -341,11 +385,19 @@ ALTER TABLE ONLY public.game_states
 
 
 --
--- Name: character_location_map player_location_junction_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: player_location_map player_location_map_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.character_location_map
-    ADD CONSTRAINT player_location_junction_pkey PRIMARY KEY (junction_id);
+ALTER TABLE ONLY public.player_location_map
+    ADD CONSTRAINT player_location_map_pkey PRIMARY KEY (map_id);
+
+
+--
+-- Name: player_location_map player_location_map_player_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.player_location_map
+    ADD CONSTRAINT player_location_map_player_id_key UNIQUE (player_id);
 
 
 --
@@ -357,19 +409,11 @@ ALTER TABLE ONLY public.players
 
 
 --
--- Name: game_session game_info_current_player_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: game_session game_session_player_won_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.game_session
-    ADD CONSTRAINT game_info_current_player_fkey FOREIGN KEY (num_players) REFERENCES public.players(player_id);
-
-
---
--- Name: game_session game_logs_player_won_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.game_session
-    ADD CONSTRAINT game_logs_player_won_fkey FOREIGN KEY (player_won) REFERENCES public.players(player_id);
+    ADD CONSTRAINT game_session_player_won_fkey FOREIGN KEY (player_won) REFERENCES public.players(player_id);
 
 
 --
@@ -389,19 +433,27 @@ ALTER TABLE ONLY public.game_states
 
 
 --
--- Name: character_location_map player_location_junction_location_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: player_location_map player_location_map_location_name_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.character_location_map
-    ADD CONSTRAINT player_location_junction_location_id_fkey FOREIGN KEY (location_id) REFERENCES public.locations(location_id);
+ALTER TABLE ONLY public.player_location_map
+    ADD CONSTRAINT player_location_map_location_name_fkey FOREIGN KEY (location_name) REFERENCES public.locations(location_name);
 
 
 --
--- Name: character_location_map player_location_junction_player_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: player_location_map player_location_map_player_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.character_location_map
-    ADD CONSTRAINT player_location_junction_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(player_id);
+ALTER TABLE ONLY public.player_location_map
+    ADD CONSTRAINT player_location_map_player_id_fkey FOREIGN KEY (player_id) REFERENCES public.players(player_id);
+
+
+--
+-- Name: player_location_map player_location_map_session_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.player_location_map
+    ADD CONSTRAINT player_location_map_session_id_fkey FOREIGN KEY (session_id) REFERENCES public.game_session(session_id);
 
 
 --
