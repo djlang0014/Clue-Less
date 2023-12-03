@@ -215,14 +215,14 @@ def on_create(data):
 @socketio.on('join')
 def on_join(data):
     username = data['username']
+
     #Create new player
     user_id = session['user_id']
     session['username'] = username
     session.modified = True
     new_player = Player(username, request.sid)
+
     playerList.append(new_player)
-    # playerDict[username] = new_player
-    
 
     room = data['roomCode']
     if room not in gameRooms:
@@ -237,8 +237,6 @@ def on_join(data):
         session.modified = True
         gameRooms[room].addPlayer(new_player)
 
-        # add player info to database
-
         #When other game started, updated all host pages with the new room code,
         # but joining a game did not trigger the response on the host
         socketio.emit("join_conf", {'code': room, 'text': 'User has joined the room.'}, to=request.sid)
@@ -252,7 +250,7 @@ def on_game_start(data):
 
     # Start GameInstance object and replace the game's Lobby in the gameRooms hashmap
     gameRooms[roomCode] = gameRooms[roomCode].startGame()
-    
+
     locationStack = locationList
     cardLocationStack = cardLocationList
     cardCharacterStack = cardCharacterList
@@ -304,8 +302,10 @@ def on_game_start(data):
 def init_game():
     username = session['username']
     roomCode = session['roomCode']
+
     #new sessionID joins room
     join_room(roomCode)
+
     #Update SessionID for player
     gameRooms[roomCode].playersDict[username].updateSessionID(request.sid)
 
@@ -400,10 +400,13 @@ def end_turn():
     user_id = session['user_id']
     username = session['username']
     roomCode = session['roomCode']
+    
     gameInstance = gameRooms[roomCode]
     player = gameInstance.playersDict[username]
+
     i = gameInstance.players.index(player)
     next_player_index = (i + 1) % len(gameInstance.players)
+
     # socketio.emit("next_turn", {'text':"It is "+gameInstance.players[next_player_index].name+"'s turn!"}), to=gameInstance.roomCode)
     socketio.emit("your_turn", {'text':"It is your turn!"}, to=gameInstance.players[next_player_index].sid)
     
@@ -445,7 +448,6 @@ def movecharacter(data):
     roomCode = session['roomCode']
     player = gameRooms[roomCode].playersDict[session['username']]
     gameInstance = gameRooms[roomCode]
-    # gameRooms[roomCode]..sid
 
     # query database to retrieve player's current location
     currentLocation = getPlayerCurrentLocation(player.sid, roomCode)
