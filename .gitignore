@@ -402,6 +402,3 @@ env
 venv
 .venv
 .vscode/launch.json
-
-#flask-session
-flask_session
