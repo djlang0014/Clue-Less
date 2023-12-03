@@ -98,27 +98,10 @@ class GameInstance:
     
     def findAvailableLocations(self, sessionID, location):
         board = self.getLocationList()
+        
+        adjacent_units = board.get(location).get('adjacent_units', [])
 
-        adjacent_units = board.get(self.playerLocations[sessionID]).get('adjacent_units', [])
-        adjacent_locations = []
-
-        if adjacent_units:
-            for unit in adjacent_units:
-                unit_info = board.get(unit, {})
-                if unit_info:
-                    adjacent_locations.append((unit))
-
-        # call self.getPlayerLocation and retrieve player location
-        potential_locations = adjacent_units
-        # self.find_available_locations(board, self.playerLocations[sessionID])
-        return potential_locations
-        if location in potential_locations :
-            self.playerLocations[username] = location
-            return 1
-        else :
-            # TODO: Pop up to let user know they can't move there?
-            return 0
-        pass
+        return adjacent_units
 
     def setPlayerLocation(self, sessionID, location):
         self.playerLocations[sessionID] = location
