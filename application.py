@@ -10,7 +10,7 @@ from gameinfo import *
 from gamelogic import *
 import threading
 import os
-import time
+import time, datetime
 
 
 ROOM_CODE_CHARS = string.ascii_lowercase + string.digits
@@ -87,6 +87,7 @@ socketio = SocketIO(application, logger=True)
 # can remove all other psycopg.connect() lines
 conn = psycopg.connect(f"dbname={DB_NAME} user={DB_USERNAME} password={DB_PASSWORD}")
 application.secret_key = os.urandom(24)  
+print("App key: ", application.secret_key)
 
 # Send HTML!
 #@application.route('/')
@@ -116,7 +117,7 @@ def message_recieved(data, buttonnum):
         case 8:
             getPlayerCards(data['text'])
         case 9:
-            setCharacterLocation(1, data['text'])
+            setPlayerLocation(1, data['text'])
         case 10:
             setPlayerName(1, data['text'])
         case 11:
@@ -213,6 +214,8 @@ def on_join(data):
         join_room(room)
         gameRooms[room].addPlayer(new_player)
 
+        # add player info to database
+
         #When other game started, updated all host pages with the new room code,
         # but joining a game did not trigger the response on the host
         socketio.emit("join_conf", {'code': room, 'text': 'User has joined the room.'}, to=request.sid)
@@ -258,7 +261,16 @@ def on_game_start(data):
             i += 1
             if i >= len(cards):
                 break
+ 
+    # post game session information to database
+    setGameSessionDetails(roomCode)
+    
+    # post player information to the database
+    setPlayerInfo(roomCode)
 
+    # Use this function when the game has ended (will move)
+    # setEndGameSessionDetails(roomCode)
+    
     socketio.emit("start_game_all", {'url': url_for('testzone')}, to=roomCode)
     time.sleep(1)
     socketio.emit("next_turn", {'text':"It is "+gameRooms[roomCode].players[0].name+"'s turn!"})
@@ -279,6 +291,9 @@ def request_player_info(data):
     #socketio.emit("casefilebackdoor", {'location': caseFile.room.cardName, 'suspect': caseFile.suspect.cardName, 'weapon': caseFile.weapon.cardName}, to=request.sid)
     user_id = session['user_id']
     player = playerDict[user_id]
+
+    roomCode = gameInstance.gameID
+
     print(player.getPlayerCharacter())
     socketio.emit("playerinfo", {'playername': player.getPlayerName(), 'character': player.getPlayerCharacter()}, to=request.sid)
     playerCards = player.getPlayerCards()
@@ -286,20 +301,25 @@ def request_player_info(data):
     for card in playerCards:
         socketio.emit("playercard", {'cardtype': card.cardType, 'cardname': card.cardName}, to=request.sid)
     
+    startLocation = ''
+
     for player in gameInstance.players:
         match player.getPlayerCharacter():
             case "Miss Scarlet":
-                gameInstance.setPlayerStartLocation(player.sid, 'ScarletStart')
+                startLocation = 'ScarletStart'
             case "Col. Mustard":
-                gameInstance.setPlayerStartLocation(player.sid, 'MustardStart')
+                startLocation = 'MustardStart'
             case "Mrs. White":
-                gameInstance.setPlayerStartLocation(player.sid, 'WhiteStart')
+                startLocation = 'WhiteStart'
             case "Mr. Green":
-                gameInstance.setPlayerStartLocation(player.sid, 'GreenStart')
+                startLocation = 'GreenStart'
             case "Mrs. Peacock":
-                gameInstance.setPlayerStartLocation(player.sid, 'PeacockStart')
+                startLocation = 'PeacockStart'
             case "Prof. Plum":
-                gameInstance.setPlayerStartLocation(player.sid, 'PlumStart')
+                startLocation = 'PlumStart'
+        
+        gameInstance.setPlayerStartLocation(player.sid, startLocation)
+        setPlayerLocation(roomCode, player.sid, startLocation)
 
     
 
@@ -358,12 +378,21 @@ def movecharacter(data):
     character = data['character']
     player = playerDict[session['user_id']]
     
-    num = gameInstance.changePlayerLocation(player.sid, newLocation)
+    roomCode = gameInstance.gameID
 
-    if num == 1:
-        socketio.emit('movecharacter', {'character': character, 'location': newLocation})
-    else:
+    adjacent_locations = gameInstance.findAvailableLocations(player.sid, newLocation)
+
+    if newLocation not in adjacent_locations:
         socketio.emit('message_from_server', {'text': character + ' cannot move there.'})
+    else:
+        # query database to see if the location is occupied, and if so whether it's a hallway
+        is_occupied_hallway = checkIfHallwayAndOccupied(roomCode, newLocation)
+        if (is_occupied_hallway == True):
+            socketio.emit('message_from_server', {'text': character + ' cannot move there.'})
+        else:
+            gameInstance.setPlayerLocation(player.sid, newLocation)
+            setPlayerLocation(roomCode, player.sid, newLocation)
+            socketio.emit('movecharacter', {'character': character, 'location': newLocation})
 
 @socketio.on('accusation')
 def accusation(data):
@@ -519,12 +548,11 @@ def accusation(accString):
 # Return requested data and success status of an update request
 # Getters
 """
-The exact database layout will need to be refined for the minimal implementation, but this should be good for the skeletal.
+
 """
-def getCharacterLocation(playerID):
-    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
+def getCharacterLocations(gameID):
         with conn.cursor() as cur:
-            cur.execute("SELECT location FROM players WHERE player_id = %s", (playerID,))
+            cur.execute("SELECT location FROM players WHERE player_id = %s", (gameID,))
             socketio.emit('message_from_server', {'text':'Here is the player location: ' + cur.fetchone()[0]})
 
 def getPlayerName(playerID):
@@ -609,80 +637,105 @@ I think everything will be different each time so we will just need to run these
 We could also make a larger function that accepts and sets all of the values for each character at the start of the game.
 """
 # Setters
-def setCharacterLocation(playerID, location):
-    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
-        with conn.cursor() as cur:
-            #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
-            cur.execute("UPDATE players SET location = %s WHERE player_ID = %s", (location, playerID,))
-            cur.execute("SELECT location FROM players WHERE player_ID = %s", (playerID,))
-            #fetchone() returns a tuple, so we need to index it to get the value
-            if cur.fetchone()[0] == (location):
-                socketio.emit("message_from_server", {'text': 'Success'})
+def setGameSessionDetails(roomCode):
+    with conn.cursor() as cur:
+        now = datetime.datetime.now()
+        curr_time = now.strftime('%Y-%m-%d %H:%M:%S')
+        
+        # placeholder for now - will hold case file indices (or IDs?)
+        case_file_index = [1 ,2 ,3]
 
-def setPlayerName(playerID, playerName):
-    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
-        with conn.cursor() as cur:
-            #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
-            cur.execute("UPDATE players SET player_name = %s WHERE player_ID = %s", (playerName, playerID,))
-            cur.execute("SELECT player_name FROM players WHERE player_ID = %s", (playerID,))
-            #fetchone() returns a tuple, so we need to index it to get the value
-            if cur.fetchone()[0] == (playerName):
-                socketio.emit("message_from_server", {'text': 'Success'})
+        query = "INSERT INTO game_session(session_id, is_active, start_time, num_players, case_file) VALUES (%s, %s, %s, %s, %s);"
+        values = (roomCode, 't', curr_time, len(gameRooms[roomCode].players), case_file_index)
+        
+        # Insert relevant game info into game_session table
+        # note: we build the query string and values separately for safety reasons 
+        try:
+            cur.execute(query, values)
+        except(Exception, psycopg.Error) as error:
+            print("Error: ", error)
+        
+        conn.commit()
+        socketio.emit("message_from_server", {'text': 'Success'})
+        
+def setEndGameSessionDetails(roomCode):
+    # Updates the game session's active status and adds the end time and which player won the game (if any)
+    with conn.cursor() as cur:
+        now = datetime.datetime.now()
+        curr_time = now.strftime('%Y-%m-%d %H:%M:%S')
 
-def setPlayerCharacter(playerID, character_name):
-    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
-        with conn.cursor() as cur:
-            #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
-            cur.execute("UPDATE players SET character_name = %s WHERE player_ID = %s", (character_name, playerID,))
-            cur.execute("SELECT character_name FROM players WHERE player_ID = %s", (playerID,))
-            #fetchone() returns a tuple, so we need to index it to get the value
-            if cur.fetchone()[0] == (character_name):
-                socketio.emit("message_from_server", {'text': 'Success'})
+        query = "UPDATE game_session SET is_active = %s, end_time = %s, player_won = %s WHERE session_id = %s;"
 
-def setMayStay(playerID):
-    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
-        with conn.cursor() as cur:
-            #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
-            #fetchone() returns a tuple, so we need to index it to get the value
-            location = cur.execute("SELECT location FROM players WHERE player_id = %s", (playerID,))
-            location = location.fetchone()[0]
-            if location == "Hallway":
-                cur.execute("UPDATE players SET may_stay = %s WHERE player_ID = %s", (False, playerID,))
-                cur.execute("SELECT location FROM players WHERE player_id = %s", (playerID,))
-                if not cur.fetchone()[0]:
-                    socketio.emit("message_from_server", {'text': 'Success'})
-            else:
-                cur.execute("UPDATE players SET may_stay = %s WHERE player_ID = %s", (True, playerID,))
-                cur.execute("SELECT location FROM players WHERE player_id = %s", (playerID,))
-                if cur.fetchone()[0]:
-                    socketio.emit("message_from_server", {'text': 'Success'})
-                       
-def setCurPlayer(gameID):
-    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT currentid FROM gamestate WHERE game_id = %s", (gameID,))
-            cur.execute("UPDATE gamestate SET currentID = %s WHERE game_id = %s", (2, gameID,))
-            socketio.emit("message_from_server", {'text': 'Success'})
-            #fetchone() returns a tuple, so we need to index it to get the value
-            #if cur.fetchone()[0] == (playerName):
-            #    print("Success")
+        # player_won value is set to be "None" (for now)
+        values = ('f', curr_time, None, roomCode)
 
-def setNextPlayer(playerID):
-    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
-        with conn.cursor() as cur:
-            #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
-            #cur.execute("UPDATE players SET player_name = %s WHERE player_ID = %s", (playerName, playerID,))
-            cur.execute("SELECT player_name FROM players WHERE player_ID = %s", (playerID,))
-            socketio.emit("message_from_server", {'text': 'Success'})
-            #fetchone() returns a tuple, so we need to index it to get the value
-            #if cur.fetchone()[0] == (playerName):
-            #    print("Success")
+        try:
+            cur.execute(query, values)
+        except (Exception, psycopg.Error) as error:
+            print("Error: ", error)
+        
+        conn.commit()
+        socketio.emit("message_from_server", {'text': 'Success'})
 
-def setCaseFile(gameID):
-    pass
+def setPlayerInfo(roomCode):
+    # Posts player info to the database
+    with conn.cursor() as cur:
 
-def setPlayerCards(playerID):
-    pass
+        # Looping through playerDict to retrieve all players. This posts to the database several times
+        for player_id in playerDict.keys():
+            values = []
+            values.append(playerDict[player_id].sid)
+            values.append(playerDict[player_id].name)
+            values.append(playerDict[player_id].character)
+            values.append(roomCode)
+
+            query = "INSERT INTO players(player_id, player_name, character_name, session_id)VALUES(%s, %s, %s, %s)"
+
+            try:
+                cur.execute(query, values)
+            except (Exception, psycopg.Error) as error:
+                print("Error: ", error)
+        
+        conn.commit()
+ 
+def setPlayerLocation(roomCode, player_id, location):
+    with conn.cursor() as cur:
+        # Does an update (instead of insert) if the player_id already exists in the table
+        query = "INSERT INTO player_location_map (location_name, player_id, session_id) VALUES (%s, %s, %s) ON CONFLICT (player_id) DO UPDATE SET location_name = excluded.location_name;"
+
+        values = [location, player_id, roomCode]
+
+        try:
+            cur.execute(query, values)
+        except (Exception, psycopg.Error) as error:
+            print("Error ", error)
+        
+        conn.commit()
+
+# This function queries the database to see if the location a player is moving to is an occupied hallway
+def checkIfHallwayAndOccupied(roomCode, location):
+    with conn.cursor() as cur:
+        query = "SELECT locations.is_restricted FROM locations \
+        INNER JOIN player_location_map ON locations.location_name = player_location_map.location_name \
+        WHERE player_location_map.location_name = %s AND player_location_map.session_id = %s;"
+
+        values = [location, roomCode]
+
+        result = False
+
+        # psycopg raises an exception when no records are found, and that case implies that the location wasn't listed 
+        # on the player_location_map table at all (which means no players are located there)
+        # So, we have result be False by default
+        try:
+            cur.execute(query, values)
+            temp = cur.fetchone()[0]
+            result = temp
+
+        except (Exception, psycopg.Error) as error:
+            print("Error ", error)
+        
+        return result
+
 
 ####################################################
 
