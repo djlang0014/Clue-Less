@@ -59,45 +59,52 @@ class GameInstance:
     def getLocationList(self):
         #This will make the list of locations for the game
         board = {
-            'Study': {'type': 'room', 'adjacent_units': ['Hall1', 'Hall3', 'Kitchen']},
-            'Hall1': {'type': 'hallway', 'adjacent_units': ['Study', 'Hall']},
-            'Hall': {'type': 'room', 'adjacent_units': ['Hall1', 'Hall4', 'Hall2']},
-            'Hall2': {'type': 'hallway', 'adjacent_units': ['Hall', 'Lounge']},
-            'Lounge': {'type': 'room', 'adjacent_units': ['Hall2', 'Hall5', 'Conservatory']},
-            'Hall3': {'type': 'hallway', 'adjacent_units': ['Study', 'Library']},
-            'Hall4': {'type': 'hallway', 'adjacent_units': ['Hall', 'Billiard']},
-            'Hall5': {'type': 'hallway', 'adjacent_units': ['Lounge', 'Dining']},
-            'Library': {'type': 'room', 'adjacent_units': ['Hall3', 'Hall6', 'Hall8']},
-            'Hall6': {'type': 'hallway', 'adjacent_units': ['Library', 'Billiard']},
-            'Billiard': {'type': 'room', 'adjacent_units': ['Hall4', 'Hall6', 'Hall7', 'Hall9']},
-            'Hall7': {'type': 'hallway', 'adjacent_units': ['Billiard', 'Dining']},
-            'Dining': {'type': 'room', 'adjacent_units': ['Hall5', 'Hall7', 'Hall10']},
-            'Hall8': {'type': 'hallway', 'adjacent_units': ['Library', 'Conservatory']},
-            'Hall9': {'type': 'hallway', 'adjacent_units': ['Billiard', 'Ballroom']},
-            'Hall10': {'type': 'hallway', 'adjacent_units': ['Dining', 'Kitchen']},
-            'Conservatory': {'type': 'room', 'adjacent_units': ['Lounge', 'Hall8', 'Hall11']},
-            'Hall11': {'type': 'hallway', 'adjacent_units': ['Conservatory', 'Ballroom']},
-            'Ballroom': {'type': 'room', 'adjacent_units': ['Hall9', 'Hall11', 'Hall12']},
-            'Hall12': {'type': 'hallway', 'adjacent_units': ['Ballroom', 'Kitchen']},
-            'Kitchen': {'type': 'room', 'adjacent_units': ['Study', 'Hall10', 'Hall12']},
-            'ScarletStart': {'type': 'start', 'adjacent_units': ['Hall2']},
-            'MustardStart': {'type': 'start', 'adjacent_units': ['Hall5']},
-            'WhiteStart': {'type': 'start', 'adjacent_units': ['Hall12']},
-            'GreenStart': {'type': 'start', 'adjacent_units': ['Hall11']},
-            'PeacockStart': {'type': 'start', 'adjacent_units': ['Hall8']},
-            'PlumStart': {'type': 'start', 'adjacent_units': ['Hall3']}
+            'Study': {'adjacent_units': ['Hall1', 'Hall3', 'Kitchen']},
+            'Hall1': {'adjacent_units': ['Study', 'Hall']},
+            'Hall': {'adjacent_units': ['Hall1', 'Hall4', 'Hall2']},
+            'Hall2': {'adjacent_units': ['Hall', 'Lounge']},
+            'Lounge': {'adjacent_units': ['Hall2', 'Hall5', 'Conservatory']},
+            'Hall3': {'adjacent_units': ['Study', 'Library']},
+            'Hall4': {'adjacent_units': ['Hall', 'Billiard']},
+            'Hall5': {'adjacent_units': ['Lounge', 'Dining']},
+            'Library': {'adjacent_units': ['Hall3', 'Hall6', 'Hall8']},
+            'Hall6': {'adjacent_units': ['Library', 'Billiard']},
+            'Billiard': {'adjacent_units': ['Hall4', 'Hall6', 'Hall7', 'Hall9']},
+            'Hall7': {'adjacent_units': ['Billiard', 'Dining']},
+            'Dining': {'adjacent_units': ['Hall5', 'Hall7', 'Hall10']},
+            'Hall8': {'adjacent_units': ['Library', 'Conservatory']},
+            'Hall9': {'adjacent_units': ['Billiard', 'Ballroom']},
+            'Hall10': {'adjacent_units': ['Dining', 'Kitchen']},
+            'Conservatory': {'adjacent_units': ['Lounge', 'Hall8', 'Hall11']},
+            'Hall11': {'adjacent_units': ['Conservatory', 'Ballroom']},
+            'Ballroom': {'adjacent_units': ['Hall9', 'Hall11', 'Hall12']},
+            'Hall12': {'adjacent_units': ['Ballroom', 'Kitchen']},
+            'Kitchen': {'adjacent_units': ['Study', 'Hall10', 'Hall12']},
+            'ScarletStart': {'adjacent_units': ['Hall2']},
+            'MustardStart': {'adjacent_units': ['Hall5']},
+            'WhiteStart': {'adjacent_units': ['Hall12']},
+            'GreenStart': {'adjacent_units': ['Hall11']},
+            'PeacockStart': {'adjacent_units': ['Hall8']},
+            'PlumStart': {'adjacent_units': ['Hall3']}
             }
         return board
     
-    def changePlayerLocation(self, sessionID, location):
+    def findAvailableLocations(self, sessionID, location):
         board = self.getLocationList()
 
+        adjacent_units = board.get(self.playerLocations[sessionID]).get('adjacent_units', [])
+        adjacent_locations = []
+
+        if adjacent_units:
+            for unit in adjacent_units:
+                unit_info = board.get(unit, {})
+                if unit_info:
+                    adjacent_locations.append((unit))
+
         # call self.getPlayerLocation and retrieve player location
-        potential_locations = self.find_available_locations(board, self.playerLocations[sessionID])
-
-        # Convert to dict for easy lookup
-        potential_locations = dict(potential_locations)
-
+        potential_locations = adjacent_units
+        # self.find_available_locations(board, self.playerLocations[sessionID])
+        return potential_locations
         if location in potential_locations :
             self.playerLocations[sessionID] = location
             return 1
@@ -106,24 +113,9 @@ class GameInstance:
             return 0
         pass
 
-    @staticmethod
-    def find_available_locations(board, current_location):
-        adjacent_units = board.get(current_location, {}).get('adjacent_units', [])
-        adjacent_locations = []
-
-        if adjacent_units:
-            for unit in adjacent_units:
-                unit_info = board.get(unit, {})
-                if unit_info:
-                    adjacent_locations.append((unit, unit_info.get('type')))
+    def setPlayerLocation(self, sessionID, location):
+        self.playerLocations[sessionID] = location
         
-        # this creates a new list of tuples that represents all available locations (omits locations that are hallways for now)
-        # Ideally would retrieve that info from database.
-        # * Commented out for now, but this will still return the most adjacent rooms/hallways
-        # adjacent_locations = [(location, type) for location, type in adjacent_units if type != 'hallway']
-        return adjacent_locations
-        
-    
     def getPlayerLocation(self, playerID):
         return self.playerLocations[playerID]
 

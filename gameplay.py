@@ -52,7 +52,7 @@ def test_zone():
     testPlayer.selectCharacter("Miss Scarlet")
     global testInstance
     testInstance = GameInstance(1, [testPlayer])
-    testInstance.changePlayerLocation(1, billiard_room)
+    testInstance.findAvailableLocations(1, billiard_room)
     print(testInstance.getPlayerLocation(1).locName)
     global game_thread
     game_thread = threading.Thread(target=playgame, args=(testInstance, socketio, application, gameOver))
@@ -89,7 +89,7 @@ def movesubmit():
     newLocation = request.form['Location']
     for location in locationList:
         if location.locName == newLocation:
-            testInstance.changePlayerLocation(1, location)
+            testInstance.findAvailableLocations(1, location)
     return "1"
 
 @application.route('/suggestsubmit', methods = ['POST'])
@@ -101,7 +101,7 @@ def playgame(gameInstance, socket, app, gameOver):
     print("here")
     
     
-    testInstance.changePlayerLocation(1, ballroom)
+    testInstance.findAvailableLocations(1, ballroom)
     print(testInstance.getPlayerLocation(1).locName)
 
     while not gameOver:
