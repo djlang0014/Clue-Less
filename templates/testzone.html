@@ -43,7 +43,8 @@
         $(document).ready(function() {
             // The http vs. https is important. Use http for localhost!
             socket = io.connect('http://' + document.domain + ':' + location.port);
-            
+            socket.emit('init_game');
+
             document.getElementById("getinfo").onclick = function(){
                 // Get the text value
                 event.preventDefault()

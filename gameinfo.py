@@ -58,6 +58,9 @@ class Player:
     def addPlayerCard(self, card):
         self.cards.append(card)
 
+    def updateSessionID(self, newID):
+        self.sid = newID
+
 
 class Card:
     def __init__(self, cardType, cardName, cardID=None):

@@ -11,6 +11,7 @@ class Lobby:
         """
         self.roomCode = roomCode
         self.players = []
+        self.playersDict = {} #Key: username, Value: Player Object
 
     def startGame(self):
         #This will have to make a new game instance object
@@ -19,12 +20,15 @@ class Lobby:
 
     def removePlayer(self, player):
         self.players.remove(player)
+        self.playersDict.pop(player.getPlayerName())
 
     def addPlayer(self, player):
         self.players.append(player)
+        self.playersDict[player.getPlayerName()] = player
 
     def getNumPlayers(self):
         return len(self.players)
+    
 
 class GameInstance:
     def __init__(self, gameID, players):
@@ -32,6 +36,9 @@ class GameInstance:
         #(used for Flask SocketIO rooms)
         self.gameID = gameID
         self.players = players
+        self.playersDict = {} #Key: username, Value: Player Object
+        for player in self.players:
+            self.playersDict[player.getPlayerName()] = player
         self.currentPlayer = players[0]
         self.caseFile = None
         self.locations = None
@@ -106,7 +113,7 @@ class GameInstance:
         # self.find_available_locations(board, self.playerLocations[sessionID])
         return potential_locations
         if location in potential_locations :
-            self.playerLocations[sessionID] = location
+            self.playerLocations[username] = location
             return 1
         else :
             # TODO: Pop up to let user know they can't move there?
