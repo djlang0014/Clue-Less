@@ -401,6 +401,4 @@ FodyWeavers.xsd
 env
 venv
 .venv
-
-#flask-session
-flask_session
+.vscode/launch.json
