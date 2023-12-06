@@ -579,3 +579,59 @@
     <iframe name = "hidden-iframe" style = "display:none"></iframe>
 </body>
 </html>
+
+<!-- Notebook code:
+<div>
+    <table id="notebook">
+        <tr><th colspan="11">Suspects</th></tr>
+        <tr><th colspan="11">Weapons</th></tr>
+        <tr><th colspan="11">Rooms</th></tr>
+    </table>
+</div>
+script:
+var table = document.getElementById("notebook");
+var row = table.insertRow(1);
+var cell = row.insertCell(0);
+cell.onclick = function(thiscell) {
+                    return function() {
+                        if (thiscell.innerHTML.trim() == "") {
+                            thiscell.innerHTML = "x";
+                        }
+                        else {
+                            thiscell.innerHTML = "";
+                        }
+                    };
+    
+                }(cell);
+
+function mark(event) {
+    
+}
+
+<input type="radio" name="Character" value="Miss Scarlet"> Miss Scarlet
+<input type="radio" name="Character" value="Mrs. Peacock"> Mrs. Peacock 
+<input type="radio" name="Character" value="Mrs. White"> Mrs. White 
+<input type="radio" name="Character" value="Col. Mustard"> Col. Mustard 
+<input type="radio" name="Character" value="Mr. Green"> Mr. Green
+<input type="radio" name="Character" value="Prof. Plum"> Prof Plum 
+</label>
+<h3>Weapon</h3>
+<label>
+<input type="radio" name="Weapon" value="Candlestick"> Candlestick
+<input type="radio" name="Weapon" value="Knife"> Knife
+<input type="radio" name="Weapon" value="Revolver"> Revolver
+<input type="radio" name="Weapon" value="Lead Pipe"> Lead Pipe
+<input type="radio" name="Weapon" value="Wrench"> Wrench
+<input type="radio" name="Weapon" value="Rope"> Rope
+</label>
+<h3>Room</h3>
+<label>
+<input type="radio" name="Location" value="Kitchen"> Kitchen
+<input type="radio" name="Location" value="Study"> Study
+<input type="radio" name="Location" value="Billiard"> Billiard Room
+<input type="radio" name="Location" value="Lounge"> Lounge
+<input type="radio" name="Location" value="Library"> Library
+<input type="radio" name="Location" value="Conservatory"> Conservatory
+<input type="radio" name="Location" value="Hall"> Hall
+<input type="radio" name="Location" value="Ballroom"> Ballroom
+<input type="radio" name="Location" value="Dining"> Dining Room -->
