@@ -95,49 +95,6 @@ conn = psycopg.connect(f"dbname={DB_NAME} user={DB_USERNAME} password={DB_PASSWO
 # application.secret_key = os.urandom(24)  
 
 # Send HTML!
-#@application.route('/')
-#def root():    
-#    return render_template('index.html')
-
-# Receive a message from the front end HTML
-
-
-@socketio.on('send_message')   
-def message_recieved(data, buttonnum):
-    match buttonnum:
-        case 1:
-            getCharacterLocation(data['text'])
-        case 2:
-            getPlayerName(data['text'])
-        case 3:
-            getPlayerCharacter(data['text'])
-        case 4:
-            getMayStay(data['text'])
-        case 5:
-            getCurPlayer(data['text'])
-        case 6:
-            getNextPlayer(data['text'])
-        case 7:
-            getCaseFile(data['text'])
-        case 8:
-            getPlayerCards(data['text'])
-        case 9:
-            setPlayerLocation(1, data['text'])
-        case 10:
-            setPlayerName(1, data['text'])
-        case 11:
-            setPlayerCharacter(1, data['text'])
-        case 12:
-            setMayStay(data['text'])
-        case 13:
-            setCurPlayer(data['text'])
-        case 14:
-            setNextPlayer(data['text'])
-        case 15:
-            accusation(data['text'])
-            pass
-
-# Send HTML!
 @application.route('/')
 def root():
     if 'user_id' not in session:
@@ -385,7 +342,6 @@ def request_player_info(data):
         setPlayerLocation(roomCode, player.sid, startLocation)
 
     
-
 @socketio.on('select_character')
 def select_character(data):
     user_id = session['user_id']
@@ -417,7 +373,6 @@ def end_turn():
 @application.route('/testzone')
 def testzone():
     return render_template('testzone.html')
-
 
 @socketio.on('connect')
 def test_connect():
@@ -518,82 +473,6 @@ def suggestionreply(data):
     #TODO: Need to get the SID of the suggesting player!
     socketio.emit('message_from_server', {'text': name + ' showed ' + character + ' + ' + weapon + ' + ' + room + '.'}, to=roomCode)
 
-#TODO: What are these two functions for?
-@application.route('/suggestsubmit', methods = ['POST'])
-def suggestsubmit():
-    print(f"I suggest {request.form['Character']} with the {request.form['Weapon']} in the {request.form['Location']}")
-    return "1"
-
-@application.route('/disprovesubmit', methods = ['POST'])
-def disprovesubmit():
-    #emit to message_from_server
-    print(f"I disprove your suggestion since I have either {request.form['Character']}, {request.form['Weapon']}, or {request.form['Location']}")
-    return "1"
-
-
-
-####################################################
-# Messages for ClueLess
-
-## Server to Client:
-# Send message to indicate current game state (in case of refresh) - character positions, player’s cards, and all players’ names
-def sendGameState():
-    socketio.emit('game_state', {'text':''})
-
-# Send message to indicate beginning of player’s turn
-def sendTurnStart():
-    socketio.emit('begin_turn', {'text':''})
-
-# Send message to indicate the new space a character has moved to (character, new space name)
-def broadcastMovementUpdate():
-    socketio.emit('bc_movement_update', {'text':''})
-
-# Send message to indicate what suggestion a player has made (character, weapon, room name)
-def broadcastSuggestion():
-    socketio.emit('bc_suggestion', {'text':''})
-
-# Send message to the player who made a suggestion indicating what cards other players have chosen to show them that proves the suggestion false 
-def sendSuggestionDisproof():
-    socketio.emit('suggestion_disproof', {'text':''})
-
-# Send message to indicate what accusation a player has made (character, weapon, room name) 4
-def broadcastAccusation():
-    socketio.emit('bc_accusation', {'text':''})
-
-# Send message to an accusing player to indicate the true character, weapon, and room name 
-def sendCaseFile():
-    socketio.emit('case_file', {'text':''})
-
-# Send message to players indicating if an accusation was false or true (indicating a winner)
-def broadcastAccusationResult():
-    socketio.emit('bc_accusation_result', {'text':''})
-
-## Client to Server:
-# Request for game state refresh
-socketio.on('game_state_request')
-def onGameStateRequest(data):
-    pass
-
-# Send message to indicate which space player has moved to (character, new space name)
-socketio.on('player_move')
-def onPlayerMove(data):
-    pass
-
-# Send message with a suggestion from the player (character, weapon, room name)
-socketio.on('suggestion')
-def onSuggestion(data):
-    pass
-
-# Send message to indicate which card disproves a player’s suggestion (card name, card type)
-socketio.on('suggestion_disproof')
-def onSuggestionDisproof(data):
-    pass
-
-# Send message with an accusation from the player (character, weapon, room name)
-socketio.on('accusation')
-def onAccusation(data):
-    pass
-
 def accusation(accString):
     numstring = accString.split(',')
     num1 = numstring[0].strip()
@@ -656,11 +535,6 @@ def getCaseFile(gameID):
             cur.execute("SELECT case_file FROM game_info WHERE game_id = %s", (gameID,))
             caseFile = cur.fetchone()[0]
 
-"""
-Will we need to set default values at the start of each round? 
-I think everything will be different each time so we will just need to run these setters for each character.
-We could also make a larger function that accepts and sets all of the values for each character at the start of the game.
-"""
 # Setters
 def setGameSessionDetails(roomCode):
     with conn.cursor() as cur:
