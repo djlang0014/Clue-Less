@@ -580,58 +580,79 @@
 </body>
 </html>
 
-<!-- Notebook code:
-<div>
-    <table id="notebook">
-        <tr><th colspan="11">Suspects</th></tr>
-        <tr><th colspan="11">Weapons</th></tr>
-        <tr><th colspan="11">Rooms</th></tr>
-    </table>
-</div>
-script:
-var table = document.getElementById("notebook");
-var row = table.insertRow(1);
-var cell = row.insertCell(0);
-cell.onclick = function(thiscell) {
-                    return function() {
-                        if (thiscell.innerHTML.trim() == "") {
-                            thiscell.innerHTML = "x";
-                        }
-                        else {
-                            thiscell.innerHTML = "";
-                        }
-                    };
+<!-- <style>
+    .bold { font-weight: bold; }
     
-                }(cell);
-
-function mark(event) {
+    td, th {
+      border: 1px solid #000000;
+      width: 15px;
+      text-align: center;
+    }
     
-}
-
-<input type="radio" name="Character" value="Miss Scarlet"> Miss Scarlet
-<input type="radio" name="Character" value="Mrs. Peacock"> Mrs. Peacock 
-<input type="radio" name="Character" value="Mrs. White"> Mrs. White 
-<input type="radio" name="Character" value="Col. Mustard"> Col. Mustard 
-<input type="radio" name="Character" value="Mr. Green"> Mr. Green
-<input type="radio" name="Character" value="Prof. Plum"> Prof Plum 
-</label>
-<h3>Weapon</h3>
-<label>
-<input type="radio" name="Weapon" value="Candlestick"> Candlestick
-<input type="radio" name="Weapon" value="Knife"> Knife
-<input type="radio" name="Weapon" value="Revolver"> Revolver
-<input type="radio" name="Weapon" value="Lead Pipe"> Lead Pipe
-<input type="radio" name="Weapon" value="Wrench"> Wrench
-<input type="radio" name="Weapon" value="Rope"> Rope
-</label>
-<h3>Room</h3>
-<label>
-<input type="radio" name="Location" value="Kitchen"> Kitchen
-<input type="radio" name="Location" value="Study"> Study
-<input type="radio" name="Location" value="Billiard"> Billiard Room
-<input type="radio" name="Location" value="Lounge"> Lounge
-<input type="radio" name="Location" value="Library"> Library
-<input type="radio" name="Location" value="Conservatory"> Conservatory
-<input type="radio" name="Location" value="Hall"> Hall
-<input type="radio" name="Location" value="Ballroom"> Ballroom
-<input type="radio" name="Location" value="Dining"> Dining Room -->
+    </style>
+    
+    <div style="width:500px">
+        <table id="notebook" style="empty-cells: show; width: 100%;">
+            <tr><th colspan="11">Suspects</th></tr>
+            <tr><th colspan="11">Weapons</th></tr>
+            <tr><th colspan="11">Rooms</th></tr>
+        </table>
+    </div>
+    <script>
+    const artifacts = [
+        ["Green", "Mustard", "Peacock", "Plum", "Scarlet", "White"],
+        ["Candlestick", "Knife", "Revolver", "Lead Pipe", "Wrench", "Rope"],
+        ["Kitchen", "Study", "Billiard Room", "Lounge", "Library", 
+            "Conservatory", "Hall", "Ballroom", "Dining Room"]
+    ]
+    
+    var table = document.getElementById("notebook");
+    var row;
+    var cell;
+    var names;
+    var rowIndex = 1;
+    // Iterate over Suspects, Weapons, Rooms
+    for (let i = 0; i < artifacts.length; i++) {
+        names = artifacts[i];
+        //Iterate over items in section
+        for (let j = 0; j < names.length; j++) {
+            row = table.insertRow(rowIndex);
+            cell = row.insertCell(0);
+            cell.innerHTML = artifacts[i][j];
+            cell.style.textAlign = "left";
+            cell.style.class = "bold";
+    
+            cell.onclick = function(thisCell) {
+                                return function() {
+                                    thisCell.toggleClass("bold");
+                                    if (thisCell.innerHTML.style.fontWeight == 'bold') {
+                                        thisCell.innerHTML.style.fontWeight = 'normal';
+                                    }
+                                    else {
+                                        thisCell.innerHTML.style.fontWeight = 'bold';
+                                    }
+                                };
+                
+                            }(cell);
+                            
+            //Add 10 cells
+            for (let k = 1; k < 11; k++){
+                cell = row.insertCell(k);
+                cell.onclick = function(thisCell) {
+                                return function() {
+                                    if (thisCell.innerHTML.trim() == "") {
+                                        thisCell.innerHTML = "&check;";
+                                    }
+                                    else {
+                                        thisCell.innerHTML = "";
+                                    }
+                                };
+                
+                            }(cell);
+            }
+            rowIndex++;
+        }
+        rowIndex++;
+        
+    }
+    </script> -->
