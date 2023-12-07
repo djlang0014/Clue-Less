@@ -323,17 +323,20 @@ def init_game():
     for player in gameInstance.players:
         match player.getPlayerCharacter():
             case "Miss Scarlet":
-                gameInstance.setPlayerStartLocation(player.name, 'ScarletStart')
+                startLocation = 'ScarletStart'
             case "Col. Mustard":
-                gameInstance.setPlayerStartLocation(player.name, 'MustardStart')
+                startLocation = 'MustardStart'
             case "Mrs. White":
-                gameInstance.setPlayerStartLocation(player.name, 'WhiteStart')
+                startLocation = 'WhiteStart'
             case "Mr. Green":
-                gameInstance.setPlayerStartLocation(player.name, 'GreenStart')
+                startLocation = 'GreenStart'
             case "Mrs. Peacock":
-                gameInstance.setPlayerStartLocation(player.name, 'PeacockStart')
+                startLocation = 'PeacockStart'
             case "Prof. Plum":
-                gameInstance.setPlayerStartLocation(player.name, 'PlumStart')
+                startLocation = 'PlumStart'
+
+        gameInstance.setPlayerStartLocation(player.sid, startLocation)
+        setPlayerLocation(roomCode, player.sid, startLocation)
 
     
 @socketio.on('backdoor')
