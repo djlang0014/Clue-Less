@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 --
 -- PostgreSQL database dump
 --
@@ -488,3 +489,5 @@ ALTER TABLE ONLY public.players
 -- PostgreSQL database dump complete
 --
 
+=======
+>>>>>>> 636d778f323bb142bfc821171f83d9459f535922
