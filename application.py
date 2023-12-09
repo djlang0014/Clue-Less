@@ -92,56 +92,11 @@ socketio = SocketIO(application, logger=True, manage_session=False)
 # create database connection with credentials
 # can remove all other psycopg.connect() lines
 
-#conn = psycopg.connect(f"dbname={DB_NAME} user={DB_USERNAME} password={DB_PASSWORD}")
+
 application.secret_key = os.urandom(24)  
 
-# Send HTML!
-#@application.route('/')
-#def root():    
-#    return render_template('index.html')
-
-# Receive a message from the front end HTML
-
-
-@socketio.on('send_message')   
-def message_recieved(data, buttonnum):
-    match buttonnum:
-        case 1:
-            getCharacterLocation(data['text'])
-        case 2:
-            getPlayerName(data['text'])
-        case 3:
-            getPlayerCharacter(data['text'])
-        case 4:
-            getMayStay(data['text'])
-        case 5:
-            getCurPlayer(data['text'])
-        case 6:
-            getNextPlayer(data['text'])
-        case 7:
-            getCaseFile(data['text'])
-        case 8:
-            getPlayerCards(data['text'])
-        case 9:
-            setCharacterLocation(1, data['text'])
-        case 10:
-            setPlayerName(1, data['text'])
-        case 11:
-            setPlayerCharacter(1, data['text'])
-        case 12:
-            setMayStay(data['text'])
-        case 13:
-            setCurPlayer(data['text'])
-        case 14:
-            setNextPlayer(data['text'])
-        case 15:
-            accusation(data['text'])
-            pass
-=======
 conn = psycopg.connect(f"dbname={DB_NAME} user={DB_USERNAME} password={DB_PASSWORD}")
-# application.secret_key = os.urandom(24)  
-
-
+ 
 # Send HTML!
 @application.route('/')
 def root():
