@@ -375,6 +375,14 @@ def testzone():
 def test_connect():
     socketio.emit('after connect', {'data':'Connected to Flask Socket.'})
 
+@socketio.on('chat_message')
+def chat_message(data):
+    username = session['username']
+    roomCode = session['roomCode']
+    text = data['text']
+
+    socketio.emit("message_from_server", {'text': username+": "+text}, to=roomCode)
+
 @socketio.on('message')
 def handle_message(data):
     print('received message: ' + data)

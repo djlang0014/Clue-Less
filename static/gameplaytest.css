@@ -146,7 +146,7 @@ body {
     font-family: 'Courier New';
     font-weight: 700;
     text-align: center;
-    left: 49.90vw;
+    left: 50vw;
 }
 
 .endbutton{
@@ -161,14 +161,29 @@ body {
     font-family: 'Courier New';
     font-weight: 700;
     text-align: center;
-    left: 73.65vw;
+    left: 73.75vw;
+}
+
+.notebook {
+    width: 21.25vw;
+    left: 52.5vw;
+    height: 90vh;
+    background-image: url('logos/notebook.png');
+    background-size: 21.25vw 90vh;
+    background-repeat: no-repeat;
+    position: fixed;
+    color: black;
+    font-family: 'Courier New';
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .serverchat{
     position: fixed;
-    left: 73.65vw;
-    height: 45vh;
-    width: 25vw;
+    left: 73.75vw;
+    height:90vh;
+    width: 23.75vw;
 }
 
 .characterinfo{
