@@ -86,6 +86,7 @@
                 var character = document.querySelector('input[name="Character"]:checked').value;
                 var location = document.querySelector('input[name="Location"]:checked').value;
                 socket.emit('suggestionreply', {'weapon':weapon, 'suspect':character, 'room':location});
+                closeSuggestModal();
 
 
             }
@@ -441,6 +442,7 @@
         var suggestContainer = document.getElementById('suggestRadio');
         var accuseContainer = document.getElementById('accuseRadio');
         var endTurnContainer = document.getElementById('endTurnContainer');
+        var suggestModal = documnet.getElementById('suggestModal');
 
         document.onmousemove=getCursorPos;
         var output = document.getElementById('output');
@@ -477,6 +479,10 @@
         // Function to open the Suggest Modal
         function openSuggestModal() {
             document.getElementById('suggestModal').style.display = 'block';
+        }
+
+        span.onclick = function() {
+            suggestModal.style.display = "none";
         }
 
         // Function to close the Suggest Modal
