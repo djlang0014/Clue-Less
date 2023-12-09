@@ -5,12 +5,13 @@ import string
 from config import DB_NAME, DB_USERNAME, DB_PASSWORD
 from flask import Flask, render_template, request, url_for, session
 from flask_socketio import SocketIO, emit, join_room, leave_room
+from flask_session import Session
 import psycopg
 from gameinfo import *
 from gamelogic import *
 import threading
 import os
-import time
+import time, datetime
 
 
 ROOM_CODE_CHARS = string.ascii_lowercase + string.digits
@@ -18,7 +19,10 @@ ROOM_CODE_CHARS = string.ascii_lowercase + string.digits
 gameRooms = {}
 
 playerList = []
-playerDict = {} #Key: user_id, Value: Player
+playerDict = {} #Key: username, Value: Player
+
+#TODO: Disproof won't exit, make sure you can only end turn once, gray out if it's not your turn
+
 
 characterPlayerDict = {}
 #add a disabled characters list to disable them for people who join later
@@ -81,10 +85,13 @@ characters = ["Miss Scarlet", "Prof. Plum", "Mrs. Peacock", "Mr. Green",
 
 # Init the server
 application = Flask(__name__)
-socketio = SocketIO(application, logger=True)
+application.config["SESSION_TYPE"] = "filesystem"
+Session(application)
+socketio = SocketIO(application, logger=True, manage_session=False)
 
 # create database connection with credentials
 # can remove all other psycopg.connect() lines
+
 #conn = psycopg.connect(f"dbname={DB_NAME} user={DB_USERNAME} password={DB_PASSWORD}")
 application.secret_key = os.urandom(24)  
 
@@ -130,6 +137,10 @@ def message_recieved(data, buttonnum):
         case 15:
             accusation(data['text'])
             pass
+=======
+conn = psycopg.connect(f"dbname={DB_NAME} user={DB_USERNAME} password={DB_PASSWORD}")
+# application.secret_key = os.urandom(24)  
+
 
 # Send HTML!
 @application.route('/')
@@ -137,6 +148,16 @@ def root():
     if 'user_id' not in session:
         session['user_id'] = os.urandom(24).hex()    
     return render_template('main_menu.html')
+
+@application.route('/debug')
+def print_all():
+    json = {}
+    for roomCode in gameRooms:
+        tmp2 = []
+        for key in gameRooms[roomCode].playersDict:
+            tmp2.append(key)
+        json[roomCode] = tmp2
+    return json
 
 @application.route('/play')
 def play():
@@ -175,10 +196,12 @@ def handle_message(data):
 def on_create(data):
     username = data['username']
     #Create new player
+    session['username'] = username
+    session.modified = True
     user_id = session['user_id']
-    new_player = Player(username, user_id)
+    new_player = Player(username, request.sid)
     playerList.append(new_player)
-    playerDict[user_id] = new_player
+    # playerDict[username] = new_player
     #Create unique game/roomCode
     while True:
         roomCode = ''.join(random.choice(ROOM_CODE_CHARS) for i in range(6))
@@ -188,6 +211,8 @@ def on_create(data):
     
     gameRooms[roomCode] = Lobby(roomCode)
     join_room(roomCode)
+    session['roomCode'] = roomCode
+    session.modified = True
     gameRooms[roomCode].addPlayer(new_player)
     socketio.emit("room_code", {'text': roomCode}, to=request.sid)
 
@@ -195,12 +220,14 @@ def on_create(data):
 @socketio.on('join')
 def on_join(data):
     username = data['username']
+
     #Create new player
     user_id = session['user_id']
-    new_player = Player(username, user_id)
+    session['username'] = username
+    session.modified = True
+    new_player = Player(username, request.sid)
+
     playerList.append(new_player)
-    playerDict[user_id] = new_player
-    
 
     room = data['roomCode']
     if room not in gameRooms:
@@ -211,20 +238,24 @@ def on_join(data):
         )
     else:
         join_room(room)
+        session['roomCode'] = room
+        session.modified = True
         gameRooms[room].addPlayer(new_player)
 
         #When other game started, updated all host pages with the new room code,
         # but joining a game did not trigger the response on the host
         socketio.emit("join_conf", {'code': room, 'text': 'User has joined the room.'}, to=request.sid)
         socketio.emit("players_in_lobby", {'num': gameRooms[room].getNumPlayers()}, to=room)
-        socketio.emit("to_host", {'text':'Test messageNOW'}, to=gameRooms[room].players[0].sid)
+        # socketio.emit("to_host", {'text':'Test messageNOW'}, to=gameRooms[room].players[0].sid)
 
 #Join existing Game Room
 @socketio.on('start_game')
 def on_game_start(data):
     roomCode = data['roomCode']
+
     # Start GameInstance object and replace the game's Lobby in the gameRooms hashmap
     gameRooms[roomCode] = gameRooms[roomCode].startGame()
+
     locationStack = locationList
     cardLocationStack = cardLocationList
     cardCharacterStack = cardCharacterList
@@ -234,10 +265,7 @@ def on_game_start(data):
         cardWeaponStack[random.randint(0,len(cardWeaponStack)-1)],
         cardLocationStack[random.randint(0,len(cardLocationStack)-1)]
     )
-    global gameInstance 
-    gameRooms[roomCode].caseFile = caseFile
-    gameInstance = gameRooms[roomCode]
-    
+    gameRooms[roomCode].caseFile = caseFile    
 
     #Make sure Miss Scarlet goes first
     for i in range(len(gameRooms[roomCode].players)):
@@ -258,27 +286,38 @@ def on_game_start(data):
             i += 1
             if i >= len(cards):
                 break
-
+    
     socketio.emit("start_game_all", {'url': url_for('testzone')}, to=roomCode)
     time.sleep(1)
-    socketio.emit("next_turn", {'text':"It is "+gameRooms[roomCode].players[0].name+"'s turn!"})
-    # socketio.emit("your_turn", {'text':"It is your turn!"}, to=gameRooms[roomCode].players[0].sid)
 
+    # post game session information to database
+    setGameSessionDetails(roomCode)
     
-@socketio.on('backdoor')
-def backdoor(data):
-    caseWeapon = gameInstance.caseFile.weapon
-    caseSuspect = gameInstance.caseFile.suspect
-    caseRoom = gameInstance.caseFile.room
-    socketio.emit('message_from_server', {'text': caseWeapon.cardName + ", " + caseSuspect.cardName + ", " + caseRoom.cardName})
+    # post player information to the database
+    setPlayerInfo(roomCode)
+
+    # Use this function when the game has ended (will move)
+    # setEndGameSessionDetails(roomCode)
+
+    # socketio.emit("next_turn", {'text':"It is "+gameRooms[roomCode].players[0].name+"'s turn!"})
+    socketio.emit("your_turn", {'text':"It is your turn!"}, to=gameRooms[roomCode].players[0].sid)
 
 
-@socketio.on('request_player_info')
-def request_player_info(data):
+@socketio.on('init_game')
+def init_game():
+    username = session['username']
+    roomCode = session['roomCode']
+
+    #new sessionID joins room
+    join_room(roomCode)
+
+    #Update SessionID for player
+    gameRooms[roomCode].playersDict[username].updateSessionID(request.sid)
+
+    gameInstance = gameRooms[roomCode]
     caseFile = gameInstance.caseFile
     #socketio.emit("casefilebackdoor", {'location': caseFile.room.cardName, 'suspect': caseFile.suspect.cardName, 'weapon': caseFile.weapon.cardName}, to=request.sid)
-    user_id = session['user_id']
-    player = playerDict[user_id]
+    player = gameRooms[roomCode].playersDict[username]
     print(player.getPlayerCharacter())
     socketio.emit("playerinfo", {'playername': player.getPlayerName(), 'character': player.getPlayerCharacter()}, to=request.sid)
     playerCards = player.getPlayerCards()
@@ -289,38 +328,91 @@ def request_player_info(data):
     for player in gameInstance.players:
         match player.getPlayerCharacter():
             case "Miss Scarlet":
-                gameInstance.setPlayerStartLocation(player.sid, 'ScarletStart')
+                gameInstance.setPlayerStartLocation(player.name, 'ScarletStart')
             case "Col. Mustard":
-                gameInstance.setPlayerStartLocation(player.sid, 'MustardStart')
+                gameInstance.setPlayerStartLocation(player.name, 'MustardStart')
             case "Mrs. White":
-                gameInstance.setPlayerStartLocation(player.sid, 'WhiteStart')
+                gameInstance.setPlayerStartLocation(player.name, 'WhiteStart')
             case "Mr. Green":
-                gameInstance.setPlayerStartLocation(player.sid, 'GreenStart')
+                gameInstance.setPlayerStartLocation(player.name, 'GreenStart')
             case "Mrs. Peacock":
-                gameInstance.setPlayerStartLocation(player.sid, 'PeacockStart')
+                gameInstance.setPlayerStartLocation(player.name, 'PeacockStart')
             case "Prof. Plum":
-                gameInstance.setPlayerStartLocation(player.sid, 'PlumStart')
+                gameInstance.setPlayerStartLocation(player.name, 'PlumStart')
 
     
+@socketio.on('backdoor')
+def backdoor(data):
+    roomCode = session['roomCode']
+    caseWeapon = gameRooms[roomCode].caseFile.weapon
+    caseSuspect = gameRooms[roomCode].caseFile.suspect
+    caseRoom = gameRooms[roomCode].caseFile.room
+    socketio.emit('message_from_server', {'text': caseWeapon.cardName + ", " + caseSuspect.cardName + ", " + caseRoom.cardName})
 
+
+@socketio.on('request_player_info')
+def request_player_info(data):
+    gameInstance = gameRooms[session['roomCode']]
+    caseFile = gameInstance.caseFile
+    #socketio.emit("casefilebackdoor", {'location': caseFile.room.cardName, 'suspect': caseFile.suspect.cardName, 'weapon': caseFile.weapon.cardName}, to=request.sid)
+    user_id = session['user_id']
+    username = session['username']
+    roomCode = session['roomCode']
+    player = gameRooms[roomCode].playersDict[username]
+    print(player.getPlayerCharacter())
+    socketio.emit("playerinfo", {'playername': player.getPlayerName(), 'character': player.getPlayerCharacter()}, to=request.sid)
+    playerCards = player.getPlayerCards()
+
+    for card in playerCards:
+        socketio.emit("playercard", {'cardtype': card.cardType, 'cardname': card.cardName}, to=request.sid)
+    
+    startLocation = ''
+
+    for player in gameInstance.players:
+        match player.getPlayerCharacter():
+            case "Miss Scarlet":
+                startLocation = 'ScarletStart'
+            case "Col. Mustard":
+                startLocation = 'MustardStart'
+            case "Mrs. White":
+                startLocation = 'WhiteStart'
+            case "Mr. Green":
+                startLocation = 'GreenStart'
+            case "Mrs. Peacock":
+                startLocation = 'PeacockStart'
+            case "Prof. Plum":
+                startLocation = 'PlumStart'
+        
+        gameInstance.setPlayerStartLocation(player.sid, startLocation)
+        setPlayerLocation(roomCode, player.sid, startLocation)
+
+    
 @socketio.on('select_character')
 def select_character(data):
     user_id = session['user_id']
     character = data['character']
-    playerDict[user_id].selectCharacter(character)
+    username = session['username']
+    roomCode = session['roomCode']
+    player = gameRooms[roomCode].playersDict[username]
+    player.selectCharacter(character)
     roomCode = data['roomCode']
-    player = playerDict[user_id]
     print(player.character)
-    socketio.emit("disable_character", {'character': data['character']})
+    socketio.emit("disable_character", {'character': data['character']}, to=roomCode)
 
 @socketio.on('end_turn')
 def end_turn():
     user_id = session['user_id']
-    player = playerDict[user_id]
+    username = session['username']
+    roomCode = session['roomCode']
+    
+    gameInstance = gameRooms[roomCode]
+    player = gameInstance.playersDict[username]
+
     i = gameInstance.players.index(player)
     next_player_index = (i + 1) % len(gameInstance.players)
-    socketio.emit("next_turn", {'text':"It is "+gameInstance.players[next_player_index].name+"'s turn!"})#, to=gameInstance.roomCode)
-    # socketio.emit("your_turn", {'text':"It is your turn!"}, to=gameInstance.players[next_player_index].sid)
+
+    # socketio.emit("next_turn", {'text':"It is "+gameInstance.players[next_player_index].name+"'s turn!"}), to=gameInstance.roomCode)
+    socketio.emit("your_turn", {'text':"It is your turn!"}, to=gameInstance.players[next_player_index].sid)
     
 
 @application.route('/testzone')
@@ -330,6 +422,14 @@ def testzone():
 @socketio.on('connect')
 def test_connect():
     socketio.emit('after connect', {'data':'Connected to Flask Socket.'})
+
+@socketio.on('chat_message')
+def chat_message(data):
+    username = session['username']
+    roomCode = session['roomCode']
+    text = data['text']
+
+    socketio.emit("message_from_server", {'text': username+": "+text}, to=roomCode)
 
 @socketio.on('message')
 def handle_message(data):
@@ -356,22 +456,37 @@ def accusesubmit():
 def movecharacter(data):
     newLocation = data['location']
     character = data['character']
-    player = playerDict[session['user_id']]
-    
-    num = gameInstance.changePlayerLocation(player.sid, newLocation)
+    roomCode = session['roomCode']
+    player = gameRooms[roomCode].playersDict[session['username']]
+    gameInstance = gameRooms[roomCode]
 
-    if num == 1:
-        socketio.emit('movecharacter', {'character': character, 'location': newLocation})
-    else:
+    # query database to retrieve player's current location
+    currentLocation = getPlayerCurrentLocation(player.sid, roomCode)
+
+    adjacent_locations = gameInstance.findAvailableLocations(player.sid, currentLocation)
+
+    if newLocation not in adjacent_locations:
         socketio.emit('message_from_server', {'text': character + ' cannot move there.'})
+    else:
+        # query database to see if the location is occupied, and if so whether it's a hallway
+        is_occupied_hallway = checkIfHallwayAndOccupied(roomCode, newLocation)
+        if (is_occupied_hallway == True):
+            socketio.emit('message_from_server', {'text': character + ' cannot move there.'})
+        else:
+            gameInstance.setPlayerLocation(player.sid, newLocation)
+            setPlayerLocation(roomCode, player.sid, newLocation)
+            socketio.emit('movecharacter', {'character': character, 'location': newLocation})
 
 @socketio.on('accusation')
 def accusation(data):
     accuseWeapon = data['weapon']
     accuseSuspect = data['suspect']
     accuseRoom = data['room']
-    player = playerDict[session['user_id']]
+    roomCode = session['roomCode']
+    gameInstance = gameRooms[roomCode]
+    player = gameInstance.playersDict[session['username']]
     name = player.name
+
 
     caseWeapon = gameInstance.caseFile.weapon
     caseSuspect = gameInstance.caseFile.suspect
@@ -380,108 +495,36 @@ def accusation(data):
     accusationString = "" + accuseWeapon + ", " + accuseSuspect + ", " + accuseRoom + "."
 
     if accuseWeapon == caseWeapon and accuseSuspect == caseSuspect and accuseRoom == caseRoom:
-        socketio.emit('message_from_server', {'text': name + ' wins!'})
+        socketio.emit('message_from_server', {'text': name + ' wins!'}, to=roomCode)
     else:
         gameInstance.players.remove(player)
-        socketio.emit('message_from_server', {'text': name + ' was incorrect. They guessed: ' + accusationString})
+        socketio.emit('message_from_server', {'text': name + ' was incorrect. They guessed: ' + accusationString}, to=roomCode)
     
 @socketio.on('suggestion')
 def suggestion(data):
     suggestWeapon = data['weapon']
     suggestSuspect = data['suspect']
-    suggestRoom = gameInstance.getPlayerLocation(session['user_id'])
-    player = playerDict[session['user_id']]
+    roomCode = session['roomCode']
+    suggestRoom = gameRooms[roomCode].getPlayerLocation(session['username'])
+    
+    player = gameRooms[roomCode].playersDict[session['username']]
     name = player.name
 
     suggestionString = "" + suggestWeapon + ", " + suggestSuspect + ", " + suggestRoom + "."
 
-    socketio.emit('message_from_server', {'text': name + ' suggested: ' + suggestionString})
-    socketio.emit('showsuggestmodal', {'player': name})
+    socketio.emit('message_from_server', {'text': name + ' suggested: ' + suggestionString}, to=roomCode)
+    socketio.emit('showsuggestmodal', {'player': name}, to=roomCode)
 
 @socketio.on('suggestionreply')
 def suggestionreply(data):
-    player = playerDict[session['user_id']]
+    roomCode = session['roomCode']
+    player = gameRooms[roomCode].playersDict[session['username']]
     name = player.name
     weapon = data['weapon']
     character = data['suspect']
     room = data['room']
-    socketio.emit('message_from_server', {'text': name + ' showed ' + character + ' + ' + weapon + ' + ' + room + '.'})
-
-
-@application.route('/suggestsubmit', methods = ['POST'])
-def suggestsubmit():
-    print(f"I suggest {request.form['Character']} with the {request.form['Weapon']} in the {request.form['Location']}")
-    return "1"
-
-@application.route('/disprovesubmit', methods = ['POST'])
-def disprovesubmit():
-    #emit to message_from_server
-    print(f"I disprove your suggestion since I have either {request.form['Character']}, {request.form['Weapon']}, or {request.form['Location']}")
-    return "1"
-
-
-
-####################################################
-# Messages for ClueLess
-
-## Server to Client:
-# Send message to indicate current game state (in case of refresh) - character positions, player’s cards, and all players’ names
-def sendGameState():
-    socketio.emit('game_state', {'text':''})
-
-# Send message to indicate beginning of player’s turn
-def sendTurnStart():
-    socketio.emit('begin_turn', {'text':''})
-
-# Send message to indicate the new space a character has moved to (character, new space name)
-def broadcastMovementUpdate():
-    socketio.emit('bc_movement_update', {'text':''})
-
-# Send message to indicate what suggestion a player has made (character, weapon, room name)
-def broadcastSuggestion():
-    socketio.emit('bc_suggestion', {'text':''})
-
-# Send message to the player who made a suggestion indicating what cards other players have chosen to show them that proves the suggestion false 
-def sendSuggestionDisproof():
-    socketio.emit('suggestion_disproof', {'text':''})
-
-# Send message to indicate what accusation a player has made (character, weapon, room name) 4
-def broadcastAccusation():
-    socketio.emit('bc_accusation', {'text':''})
-
-# Send message to an accusing player to indicate the true character, weapon, and room name 
-def sendCaseFile():
-    socketio.emit('case_file', {'text':''})
-
-# Send message to players indicating if an accusation was false or true (indicating a winner)
-def broadcastAccusationResult():
-    socketio.emit('bc_accusation_result', {'text':''})
-
-## Client to Server:
-# Request for game state refresh
-socketio.on('game_state_request')
-def onGameStateRequest(data):
-    pass
-
-# Send message to indicate which space player has moved to (character, new space name)
-socketio.on('player_move')
-def onPlayerMove(data):
-    pass
-
-# Send message with a suggestion from the player (character, weapon, room name)
-socketio.on('suggestion')
-def onSuggestion(data):
-    pass
-
-# Send message to indicate which card disproves a player’s suggestion (card name, card type)
-socketio.on('suggestion_disproof')
-def onSuggestionDisproof(data):
-    pass
-
-# Send message with an accusation from the player (character, weapon, room name)
-socketio.on('accusation')
-def onAccusation(data):
-    pass
+    #TODO: Need to get the SID of the suggesting player!
+    socketio.emit('message_from_server', {'text': name + ' showed ' + character + ' + ' + weapon + ' + ' + room + '.'}, to=roomCode)
 
 def accusation(accString):
     numstring = accString.split(',')
@@ -517,63 +560,26 @@ def accusation(accString):
 # Request and update data according to gameplay
 ## Database to Server:
 # Return requested data and success status of an update request
+
 # Getters
-"""
-The exact database layout will need to be refined for the minimal implementation, but this should be good for the skeletal.
-"""
-def getCharacterLocation(playerID):
-    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
+def getPlayerCurrentLocation(player_id, roomCode):
         with conn.cursor() as cur:
-            cur.execute("SELECT location FROM players WHERE player_id = %s", (playerID,))
-            socketio.emit('message_from_server', {'text':'Here is the player location: ' + cur.fetchone()[0]})
+            
+            query = "SELECT locations.location_name FROM locations \
+                INNER JOIN player_location_map ON locations.location_name = player_location_map.location_name \
+                WHERE player_location_map.player_id = %s AND player_location_map.session_id = %s"
+            
+            values = [player_id, roomCode]
 
-def getPlayerName(playerID):
-    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT player_name FROM players WHERE player_id = %s", (playerID,))
-            socketio.emit('message_from_server', {'text':'Here is the player name: ' + cur.fetchone()[0]})
+            try:
+                cur.execute(query, values)
+                curr_location = cur.fetchone()[0]
+            except(Exception, psycopg.Error) as error:
+                print("Error: ", error)
+            
+            return curr_location
 
-def getPlayerCharacter(playerID):
-    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT character_name FROM players WHERE player_id = %s", (playerID,))
-            socketio.emit('message_from_server', {'text':'Here is the player character: ' + cur.fetchone()[0]})
-
-def getMayStay(playerID):
-    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
-        with conn.cursor() as cur:
-            #These can be replaced with function calls later, but we are sending visible messages for now so I can't return a value.
-            location = cur.execute("SELECT location FROM players WHERE player_id = %s", (playerID,))
-            location = location.fetchone()[0]
-            name = cur.execute("SELECT player_name FROM players WHERE player_id = %s", (playerID,))
-            playerName = name.fetchone()[0]
-            if location == "Hallway":
-                socketio.emit('message_from_server', {'text': playerName + ' is in a hallway and may not stay.'})
-            else:
-                socketio.emit('message_from_server', {'text': playerName + ' is not in a hallway and may stay.'})
-
-def getCurPlayer(gameID):
-    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
-        with conn.cursor() as cur:
-            print(gameID)
-            gameId = int(gameID)
-            cur.execute("SELECT currentid FROM gamestate WHERE game_id = %s", (gameId,))
-            cur.execute("SELECT player_name FROM players WHERE player_id = %s", (cur.fetchone()[0],))
-            playername = cur.fetchone()[0]
-            socketio.emit('message_from_server', {'text':'It is ' + playername + "'s turn."})
-
-def getNextPlayer(playerID):
-    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT MAX(player_id) FROM players")
-            maxID = cur.fetchone()[0]
-            if int(playerID) < int(maxID):
-                cur.execute("SELECT player_name FROM players WHERE player_id = %s", ((int(playerID) + 1),))
-                socketio.emit('message_from_server', {'text':cur.fetchone()[0] + " has the next turn."} )
-            else:
-                cur.execute("SELECT player_name FROM players WHERE player_id = %s", (1,))
-                socketio.emit('message_from_server', {'text':cur.fetchone()[0] + " has the next turn."} )    
-
+# TODO: add functionality to retrieve case file from database (for now the database only has placeholder values)
 def getCaseFile(gameID):
     #This can be a join or something
     with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
@@ -581,108 +587,108 @@ def getCaseFile(gameID):
             #Returns an array of card IDs which are integers. Will be in location, character, weapon order.
             cur.execute("SELECT case_file FROM game_info WHERE game_id = %s", (gameID,))
             caseFile = cur.fetchone()[0]
-            cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[0],))
-            location = cur.fetchone()[0]
-            cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[1],))
-            character = cur.fetchone()[0]
-            cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[2],))
-            weapon = cur.fetchone()[0]
-            socketio.emit('message_from_server', {'text':'The case file is: ' + location + ", " + character + ", " + weapon})
 
-def getPlayerCards(playerID):
-    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
-        with conn.cursor() as cur:
-            #Returns an array of card IDs which are integers. Will be in location, character, weapon order.
-            cur.execute("SELECT card_ids FROM players WHERE player_ID = %s", (playerID,))
-            caseFile = cur.fetchone()[0]
-            cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[0],))
-            location = cur.fetchone()[0]
-            cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[1],))
-            character = cur.fetchone()[0]
-            cur.execute("SELECT card_name FROM cards WHERE card_id = %s", (caseFile[2],))
-            weapon = cur.fetchone()[0]
-            socketio.emit('message_from_server', {'text':'The case file is: ' + location + ", " + character + ", " + weapon})
-
-"""
-Will we need to set default values at the start of each round? 
-I think everything will be different each time so we will just need to run these setters for each character.
-We could also make a larger function that accepts and sets all of the values for each character at the start of the game.
-"""
 # Setters
-def setCharacterLocation(playerID, location):
-    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
-        with conn.cursor() as cur:
-            #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
-            cur.execute("UPDATE players SET location = %s WHERE player_ID = %s", (location, playerID,))
-            cur.execute("SELECT location FROM players WHERE player_ID = %s", (playerID,))
-            #fetchone() returns a tuple, so we need to index it to get the value
-            if cur.fetchone()[0] == (location):
-                socketio.emit("message_from_server", {'text': 'Success'})
+def setGameSessionDetails(roomCode):
+    with conn.cursor() as cur:
+        now = datetime.datetime.now()
+        curr_time = now.strftime('%Y-%m-%d %H:%M:%S')
+        
+        # placeholder for now - will hold case file indices (or IDs?)
+        case_file_index = [1 ,2 ,3]
 
-def setPlayerName(playerID, playerName):
-    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
-        with conn.cursor() as cur:
-            #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
-            cur.execute("UPDATE players SET player_name = %s WHERE player_ID = %s", (playerName, playerID,))
-            cur.execute("SELECT player_name FROM players WHERE player_ID = %s", (playerID,))
-            #fetchone() returns a tuple, so we need to index it to get the value
-            if cur.fetchone()[0] == (playerName):
-                socketio.emit("message_from_server", {'text': 'Success'})
+        query = "INSERT INTO game_session(session_id, is_active, start_time, num_players, case_file) VALUES (%s, %s, %s, %s, %s);"
+        values = (roomCode, 't', curr_time, len(gameRooms[roomCode].players), case_file_index)
+        
+        # Insert relevant game info into game_session table
+        # note: we build the query string and values separately for safety reasons 
+        try:
+            cur.execute(query, values)
+        except(Exception, psycopg.Error) as error:
+            print("Error: ", error)
+        
+        conn.commit()
+        socketio.emit("message_from_server", {'text': 'Success'})
+        
+def setEndGameSessionDetails(roomCode):
+    # Updates the game session's active status and adds the end time and which player won the game (if any)
+    with conn.cursor() as cur:
+        now = datetime.datetime.now()
+        curr_time = now.strftime('%Y-%m-%d %H:%M:%S')
 
-def setPlayerCharacter(playerID, character_name):
-    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
-        with conn.cursor() as cur:
-            #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
-            cur.execute("UPDATE players SET character_name = %s WHERE player_ID = %s", (character_name, playerID,))
-            cur.execute("SELECT character_name FROM players WHERE player_ID = %s", (playerID,))
-            #fetchone() returns a tuple, so we need to index it to get the value
-            if cur.fetchone()[0] == (character_name):
-                socketio.emit("message_from_server", {'text': 'Success'})
+        query = "UPDATE game_session SET is_active = %s, end_time = %s, player_won = %s WHERE session_id = %s;"
 
-def setMayStay(playerID):
-    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
-        with conn.cursor() as cur:
-            #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
-            #fetchone() returns a tuple, so we need to index it to get the value
-            location = cur.execute("SELECT location FROM players WHERE player_id = %s", (playerID,))
-            location = location.fetchone()[0]
-            if location == "Hallway":
-                cur.execute("UPDATE players SET may_stay = %s WHERE player_ID = %s", (False, playerID,))
-                cur.execute("SELECT location FROM players WHERE player_id = %s", (playerID,))
-                if not cur.fetchone()[0]:
-                    socketio.emit("message_from_server", {'text': 'Success'})
-            else:
-                cur.execute("UPDATE players SET may_stay = %s WHERE player_ID = %s", (True, playerID,))
-                cur.execute("SELECT location FROM players WHERE player_id = %s", (playerID,))
-                if cur.fetchone()[0]:
-                    socketio.emit("message_from_server", {'text': 'Success'})
-                       
-def setCurPlayer(gameID):
-    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
-        with conn.cursor() as cur:
-            cur.execute("SELECT currentid FROM gamestate WHERE game_id = %s", (gameID,))
-            cur.execute("UPDATE gamestate SET currentID = %s WHERE game_id = %s", (2, gameID,))
-            socketio.emit("message_from_server", {'text': 'Success'})
-            #fetchone() returns a tuple, so we need to index it to get the value
-            #if cur.fetchone()[0] == (playerName):
-            #    print("Success")
+        # player_won value is set to be "None" (for now)
+        values = ('f', curr_time, None, roomCode)
 
-def setNextPlayer(playerID):
-    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
-        with conn.cursor() as cur:
-            #execute statements with %s as a placeholder for the value require a comma after the value because it returns a tuple
-            #cur.execute("UPDATE players SET player_name = %s WHERE player_ID = %s", (playerName, playerID,))
-            cur.execute("SELECT player_name FROM players WHERE player_ID = %s", (playerID,))
-            socketio.emit("message_from_server", {'text': 'Success'})
-            #fetchone() returns a tuple, so we need to index it to get the value
-            #if cur.fetchone()[0] == (playerName):
-            #    print("Success")
+        try:
+            cur.execute(query, values)
+        except (Exception, psycopg.Error) as error:
+            print("Error: ", error)
+        
+        conn.commit()
+        socketio.emit("message_from_server", {'text': 'Success'})
 
-def setCaseFile(gameID):
-    pass
+def setPlayerInfo(roomCode):
+    # Posts player info to the database
+    with conn.cursor() as cur:
+        gameInstance = gameRooms[roomCode]
+        # session['username']
+        # Looping through playerDict to retrieve all players. This posts to the database several times
+        for player_id in gameInstance.playersDict.keys():
+            values = []
+            values.append(gameInstance.playersDict[player_id].sid)
+            values.append(gameInstance.playersDict[player_id].name)
+            values.append(gameInstance.playersDict[player_id].character)
+            values.append(roomCode)
 
-def setPlayerCards(playerID):
-    pass
+            query = "INSERT INTO players(player_id, player_name, character_name, session_id)VALUES(%s, %s, %s, %s)"
+
+            try:
+                cur.execute(query, values)
+            except (Exception, psycopg.Error) as error:
+                print("Error: ", error)
+        
+        conn.commit()
+ 
+def setPlayerLocation(roomCode, player_id, location):
+    with conn.cursor() as cur:
+        # Does an update (instead of insert) if the player_id already exists in the table
+        query = "INSERT INTO player_location_map (location_name, player_id, session_id) VALUES (%s, %s, %s) ON CONFLICT (player_id) DO UPDATE SET location_name = excluded.location_name;"
+
+        values = [location, player_id, roomCode]
+
+        try:
+            cur.execute(query, values)
+        except (Exception, psycopg.Error) as error:
+            print("Error ", error)
+        
+        conn.commit()
+
+# This function queries the database to see if the location a player is moving to is an occupied hallway
+def checkIfHallwayAndOccupied(roomCode, location):
+    with conn.cursor() as cur:
+        query = "SELECT locations.is_restricted FROM locations \
+        INNER JOIN player_location_map ON locations.location_name = player_location_map.location_name \
+        WHERE player_location_map.location_name = %s AND player_location_map.session_id = %s;"
+
+        values = [location, roomCode]
+
+        result = False
+
+        # psycopg raises an exception when no records are found, and that case implies that the location wasn't listed 
+        # on the player_location_map table at all (which means no players are located there)
+        # So, we have result be False (i.e. not an occupied hallway) by default
+        try:
+            cur.execute(query, values)
+            temp = cur.fetchone()[0]
+            result = temp
+
+        except (Exception, psycopg.Error) as error:
+            print("Error ", error)
+        
+        return result
+
 
 ####################################################
 

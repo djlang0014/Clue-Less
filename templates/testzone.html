@@ -43,7 +43,8 @@
         $(document).ready(function() {
             // The http vs. https is important. Use http for localhost!
             socket = io.connect('http://' + document.domain + ':' + location.port);
-            
+            socket.emit('init_game');
+
             document.getElementById("getinfo").onclick = function(){
                 // Get the text value
                 event.preventDefault()
@@ -130,10 +131,18 @@
                 socket.emit('end_turn');
             }
 
+            document.getElementById("chat-submit").onclick = function() {
+                var text = document.getElementById("chat-text").value;
+
+                socket.emit('chat_message', {'text':text});
+
+                document.getElementById("chat-text").value = "";
+            }
+
             // Message recieved from server
             socket.on('message_from_server', function(data) {
                 var text = data['text'];
-                document.getElementById("chat").innerHTML += "Server: " + text + "\n\n";   
+                document.getElementById("chat").innerHTML += text + "\n\n";   
             });
 
             socket.on('showsuggestmodal', function(data){
@@ -188,6 +197,8 @@
             });
 
         });
+
+        
 
     </script>
 
@@ -264,6 +275,7 @@
             font-size: 20px;
             cursor: pointer;
         }
+
         
         .card {
             position: absolute;
@@ -570,6 +582,18 @@
         .selected {
         filter: brightness(70%); /* Adjust brightness for selected card */
         }
+
+
+        .bold { font-weight: bold; }
+    
+        td, th {
+            border: 1px solid #000000;
+            width: 15px;
+            text-align: center;
+        }
+        
+        /* table {margin:4px} */
+
     </style>
     
 </head>
@@ -592,33 +616,48 @@
     </div>
 
 
-    <div class = "characterinfo">
+    <!-- <div class = "characterinfo">
         <input id = "testo" type = "text" style = "display: none;"></input>
         <input id = "getinfo" type = "button">Load</input>
         <p>Player Info: </p>
         <div id = "playerinfooutput"></div>
         <div id = "cardoutput">Card Type, Card Name</div>
+    </div> -->
+    <div class = "notebook">
+        <table id="notebook" style="empty-cells: show; width: 100%;">
+            <tr><th colspan="11">Suspects</th></tr>
+            <tr><th colspan="11">&nbsp;</th></tr>
+            <tr><th colspan="11">Weapons</th></tr>
+            <tr><th colspan="11">&nbsp;</th></tr>
+            <tr><th colspan="11">Rooms</th></tr>
+        </table>
     </div>
 
     <div class = "movebutton">
         <!--This will have to be changed to selecting the location to move to-->
-        <button onclick = "showMoveList()" id="move-button">Move</button>
+        <button onclick = "showMoveList()" id="move-button" disabled>Move</button>
     </div>
 
     <div class = "suggestbutton">
-        <button onclick = "showSuggestList()" id="suggest-button">Suggest</button>
+        <button onclick = "showSuggestList()" id="suggest-button" disabled>Suggest</button>
     </div>
 
     <div class = "accusebutton">
-        <button onclick = "showAccuseList()" id="accuse-button">Accuse</button>
+        <button onclick = "showAccuseList()" id="accuse-button" disabled>Accuse</button>
     </div>
 
     <div class = "endbutton">
-        <button onclick = "showEndTurn()" id="end-button">End Turn</button>
+        <button onclick = "showEndTurn()" id="end-button" disabled>End Turn</button>
     </div>
 
-    <div id = "serverchat" class = "serverchat">
-        <textarea id="chat" style="width: 450px; height: 750px; font-size: 18px; font-family: monospace; margin-top: 10px;"></textarea>
+    <div class = "serverchat" id="serverchat">
+        <div id="chat" style="text-align: justify; overflow:auto;padding:10px; position:fixed; width:45.5vh; height:80vh; border: 1px solid #000000;"></div>
+        <!-- <textarea id="chat" style="width: 100%; height: 90%; font-size: 18px; font-family: monospace; margin-top: 10px;"></textarea> -->
+        <div style="position:fixed; top:83vh; width:100%; height: 20%; padding:20px; align-items:center;">
+            <input type="text" id="chat-text" style="width:18.5%">
+            <input type="submit" value="Submit" id="chat-submit">
+        </div>
+        
     </div>
 
     <div id = "accuseRadio" class = "radio-list-accuse">
@@ -885,6 +924,62 @@
             Hall12: {top:640, left: 610},
             Kitchen: {top:640, left: 730}
         }
+
+        //Set Up Detective Notebook
+        // ------------------------------------------------------
+        const artifacts = [
+            ["Green", "Mustard", "Peacock", "Plum", "Scarlet", "White"],
+            ["Candlestick", "Knife", "Revolver", "Lead Pipe", "Wrench", "Rope"],
+            ["Kitchen", "Study", "Billiard Room", "Lounge", "Library", 
+                "Conservatory", "Hall", "Ballroom", "Dining Room"]
+        ]
+        
+        var table = document.getElementById("notebook");
+        var row;
+        var cell;
+        var names;
+        var rowIndex = 1;
+        // Iterate over Suspects, Weapons, Rooms
+        for (let i = 0; i < artifacts.length; i++) {
+            names = artifacts[i];
+            //Iterate over items in section
+            for (let j = 0; j < names.length; j++) {
+                row = table.insertRow(rowIndex);
+                cell = row.insertCell(0);
+                cell.innerHTML = artifacts[i][j];
+                cell.style.textAlign = "left";
+                cell.style.class = "bold";
+        
+                cell.onclick = function() {
+                                    if (this.style.fontWeight == "bold") {
+                                        this.style.fontWeight = "normal";
+                                    }
+                                    else {
+                                        this.style.fontWeight = "bold";
+                                    }                                  
+                                };
+                                
+                //Add 10 cells
+                for (let k = 1; k < 11; k++){
+                    cell = row.insertCell(k);
+                    cell.onclick = function(thisCell) {
+                                    return function() {
+                                        if (thisCell.innerHTML.trim() == "") {
+                                            thisCell.innerHTML = "&check;";
+                                        }
+                                        else {
+                                            thisCell.innerHTML = "";
+                                        }
+                                    };
+                                }(cell);
+                }
+                rowIndex++;
+            }
+            rowIndex = rowIndex + 2;
+            
+        }
+        // ------------------------------------------------------
+
         // Function to open the Suggest Modal
         function openSuggestModal() {
             document.getElementById('suggestModal').style.display = 'block';
@@ -993,3 +1088,4 @@
     <iframe name = "hidden-iframe" style = "display:none"></iframe>
 </body>
 </html>
+
