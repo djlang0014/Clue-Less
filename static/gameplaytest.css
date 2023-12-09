@@ -32,7 +32,7 @@ body {
     position: relative;
     width: 21px; 
     height: 35px;  
-    background-image: url('characters/board_sprites/scarlet.png');
+    background-image: url('characters/board_sprites/single_scarlet.png');
     background-size: cover; 
     position: absolute; 
 }
