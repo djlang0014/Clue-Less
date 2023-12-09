@@ -120,10 +120,12 @@
                 var character = selectedCharacter ? selectedCharacter.getAttribute('value') : null;
                 var location = selectedLocation ? selectedLocation.getAttribute('value') : null;
                 console.log(location)
+                
                 if (weapon && character && location) {
                     // Emit the suggestion event to the server with the selected values
                     socket.emit('suggestion', {'weapon': weapon, 'suspect': character, 'room': location});
                 } 
+                closeSuggestModal();
             }
 
             document.getElementById("end-turn-button").onclick = function() {
