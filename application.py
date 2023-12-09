@@ -91,9 +91,12 @@ socketio = SocketIO(application, logger=True, manage_session=False)
 
 # create database connection with credentials
 # can remove all other psycopg.connect() lines
-conn = psycopg.connect(f"dbname={DB_NAME} user={DB_USERNAME} password={DB_PASSWORD}")
-# application.secret_key = os.urandom(24)  
 
+
+application.secret_key = os.urandom(24)  
+
+conn = psycopg.connect(f"dbname={DB_NAME} user={DB_USERNAME} password={DB_PASSWORD}")
+ 
 # Send HTML!
 @application.route('/')
 def root():

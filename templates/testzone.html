@@ -18,25 +18,25 @@
 
         var locations = {
             Study: {top:215, left: 225},
-            Hall1: {top:215, left: 350},
+            Hallway1: {top:215, left: 350},
             Hall: {top:215, left: 470},
-            Hall2: {top:215, left: 610},
+            Hallway2: {top:215, left: 610},
             Lounge: {top:215, left: 730},
-            Hall3: {top:315, left: 225},
-            Hall4: {top:315, left: 470},
-            Hall5: {top:315, left: 730},
+            Hallway3: {top:315, left: 225},
+            Hallway4: {top:315, left: 470},
+            Hallway5: {top:315, left: 730},
             Library: {top:415, left: 225},
-            Hall6: {top:415, left:350},
+            Hallway6: {top:415, left:350},
             Billiard: {top:415, left:470},
-            Hall7: {top:415, left:610},
+            Hallway7: {top:415, left:610},
             Dining: {top:415, left:730},
             Hall8: {top:540, left: 225},
             Hall9: {top:540, left: 470},
-            Hall10: {top:540, left: 730},
+            Hallway10: {top:540, left: 730},
             Conservatory: {top:640, left: 225},
-            Hall11: {top:640, left: 350},
+            Hallway11: {top:640, left: 350},
             Ballroom: {top:640, left: 470},
-            Hall12: {top:640, left: 610},
+            Hallway12: {top:640, left: 610},
             Kitchen: {top:640, left: 730}
         }
 
@@ -45,49 +45,87 @@
             socket = io.connect('http://' + document.domain + ':' + location.port);
             socket.emit('init_game');
 
-            document.getElementById("getinfo").onclick = function(){
-                // Get the text value
-                event.preventDefault()
-                var text = document.getElementById("testo").value;
+            // document.getElementById("getinfo").onclick = function(){
+            //     // Get the text value
+            //     event.preventDefault()
+            //     var text = document.getElementById("testo").value;
                 
-                socket.emit('backdoor', {'text':'test'})
+            //     socket.emit('backdoor', {'text':'test'})
 
-                // Emit a message to the 'send_message' socket
-                socket.emit('request_player_info', {'text':text});
+            //     // Emit a message to the 'send_message' socket
+            //     socket.emit('request_player_info', {'text':text});
 
-                // Set the textfield input to empty
-                document.getElementById("testo").value = "";
-            }
+            //     // Set the textfield input to empty
+            //     document.getElementById("testo").value = "";
+            // }
+
+            var cards = document.querySelectorAll('.card');
+
+            document.querySelectorAll('.card[name="Location"]').forEach(function(card) {
+                card.addEventListener('click', handleCardClick);
+            });
 
             document.getElementById("movesubmit").onclick = function() {
                 event.preventDefault();
-                var location = document.querySelector('input[name="Location2"]:checked').value;
+
+                var selectedLocation = document.querySelector('.card[name="Location"].selected');
+                var location = selectedLocation ? selectedLocation.getAttribute('value') : null;
                 socket.emit('move_character', {'character':playercharacter, 'location':location});
+                deselectAllCards();
             }
 
             document.getElementById("accusation").onclick = function() {
                 event.preventDefault();
-                var weapon = document.querySelector('input[name="Weapon"]:checked').value;
-                var character = document.querySelector('input[name="Character"]:checked').value;
-                var location = document.querySelector('input[name="Location"]:checked').value;
-                socket.emit('accusation', {'weapon':weapon, 'suspect':character, 'room':location});
+                
+                var selectedWeapon = document.querySelector('.card[name="Weapon"].selected');
+                var selectedCharacter = document.querySelector('.card[name="Character"].selected');
+                var selectedLocation = document.querySelector('.card[name="Location"].selected');
+
+                var weapon = selectedWeapon ? selectedWeapon.getAttribute('value') : null;
+                var character = selectedCharacter ? selectedCharacter.getAttribute('value') : null;
+                var location = selectedLocation ? selectedLocation.getAttribute('value') : null;
+
+                console.log(weapon, character, location)
+                if (weapon && character && location) {
+                    // Emit the suggestion event to the server with the selected values
+                    socket.emit('accusation', {'weapon': weapon, 'suspect': character, 'room': location});
+                } 
+                deselectAllCards();
             }
             
             document.getElementById("suggestionsubmit").onclick = function(){
                 event.preventDefault();
-                var weapon = document.querySelector('input[name="Weapon"]:checked').value;
-                var character = document.querySelector('input[name="Character"]:checked').value;
-                socket.emit('suggestion', {'weapon':weapon, 'suspect':character});
+                var selectedWeapon = document.querySelector('.card[name="Weapon"].selected');
+                var selectedCharacter = document.querySelector('.card[name="Character"].selected');
+
+                var weapon = selectedWeapon ? selectedWeapon.getAttribute('value') : null;
+                var character = selectedCharacter ? selectedCharacter.getAttribute('value') : null;
+ 
+
+                // Check if all necessary selections have been made
+                if (weapon && character) {
+                    // Emit the suggestion event to the server with the selected values
+                    socket.emit('suggestion', {'weapon': weapon, 'suspect': character});
+                } 
+                deselectAllCards();
             }
 
             document.getElementById("modalsubmit").onclick = function(){
                 event.preventDefault();
-                var weapon = document.querySelector('input[name="Weapon"]:checked').value;
-                var character = document.querySelector('input[name="Character"]:checked').value;
-                var location = document.querySelector('input[name="Location"]:checked').value;
-                socket.emit('suggestionreply', {'weapon':weapon, 'suspect':character, 'room':location});
+                var selectedWeapon = document.querySelector('.card[name="Weapon"].selected');
+                var selectedCharacter = document.querySelector('.card[name="Character"].selected');
+                var location = document.querySelector('.card[name="Location"].selected');
 
-
+                var weapon = selectedWeapon ? selectedWeapon.getAttribute('value') : null;
+                var character = selectedCharacter ? selectedCharacter.getAttribute('value') : null;
+                var location = selectedLocation ? selectedLocation.getAttribute('value') : null;
+                console.log(location)
+                
+                if (weapon && character && location) {
+                    // Emit the suggestion event to the server with the selected values
+                    socket.emit('suggestion', {'weapon': weapon, 'suspect': character, 'room': location});
+                } 
+                closeSuggestModal();
             }
 
             document.getElementById("end-turn-button").onclick = function() {
@@ -171,28 +209,29 @@
         .radio-list-accuse{
             position: relative;
             left: 52.5vw;
-            width: 45vw;
-            height: 90vh;
+            width: 15vw;
+            height: 15vh;
             display: none;
             grid-template-columns: 15vw 15vw 15vw;
             grid-template-rows: 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh;
         }
 
         .radio-list-move{
-            position: fixed;
+            
+            z-index: 1;
+            position: relative;
+            height: 15vh;
             left: 52.5vw;
             width: 15vw;
-            height: 90vh;
             display: none;
-            grid-template-columns: 15vw;
+            grid-template-columns: 15vw 15vw;
             grid-template-rows: 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh;
-
         }
         .radio-list-suggest{
-            position: fixed;
+            position: relative;
             left: 52.5vw;
-            width: 30vw;
-            height: 90vh;
+            width: 15vw;
+            height: 15vh;
             display: none;
             grid-template-columns: 15vw 15vw;
             grid-template-rows: 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh;
@@ -223,7 +262,7 @@
 
         .modal-content {
             position: absolute;
-            top: 50%;
+            width: 15%;
             left: 50%;
             transform: translate(-50%, -50%);
             padding: 20px;
@@ -239,6 +278,314 @@
             cursor: pointer;
         }
 
+        
+        .card {
+            position: absolute;
+            transform: scale(0.5);
+            transition: transform 0.5s ease; /* Smooth transition on hover */
+           
+            cursor: pointer; /* Change cursor to pointerwidth:100%; */
+            filter: brightness(100%); /* Reset brightness for non-selected cards */
+
+        }
+        /*.card:hover {
+            
+            z-index: 1;  
+        } */
+
+        #ballroom{
+            top: 300px; /* Position from top */
+            left: -1030px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            /*
+            margin-left: -250px;
+            width: 15%; 
+            height: 500%;
+            */
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Rooms/ballroom.png')
+        }
+        #hall{
+            top: 300px; /* Position from top */
+            left: -955px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Rooms/hall.png')
+        }
+        
+        #conservatory{
+            top: 300px; /* Position from top */
+            left: -880px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Rooms/conservatory.png')
+        }
+        #diningroom{
+            top: 300px; /* Position from top */
+            left: -805px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Rooms/dining_room.png')
+        }
+        #billardroom{
+            top: 300px; /* Position from top */
+            left: -730px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Rooms/billard_room.png')
+        }
+        
+        
+        #kitchen{
+            top: 300px; /* Position from top */
+            left: -655px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Rooms/kitchen.png')
+        }
+        #library{
+            top: 300px; /* Position from top */
+            left: -580px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Rooms/library.png')
+        }
+        #lounge{
+            top: 300px; /* Position from top */
+            left: -505px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Rooms/lounge.png')
+        }
+        #studyroom{
+            top: 300px; /* Position from top */
+            left: -430px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Rooms/study.png')
+        }
+        #hallway1{
+            top: 550px; /* Position from top */
+            left: -1030px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Rooms/hallway1.png')
+        }
+        #hallway2{
+            top: 550px; /* Position from top */
+            left: -955px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Rooms/hallway2.png')
+        }
+        #hallway3{
+            top: 550px; /* Position from top */
+            left: -880px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Rooms/hallway3.png')
+        }
+        #hallway4{
+            top: 550px; /* Position from top */
+            left: -805px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Rooms/hallway4.png')
+        }
+        #hallway5{
+            top: 550px; /* Position from top */
+            left: -730px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Rooms/hallway5.png')
+        }
+        #hallway6{
+            top: 550px; /* Position from top */
+            left: -655px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Rooms/hallway6.png')
+        }
+        #hallway7{
+            top: 550px; /* Position from top */
+            left: -580px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Rooms/hallway7.png')
+        }
+        #hallway8{
+            top: 550px; /* Position from top */
+            left: -505px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Rooms/hallway8.png')
+        }
+        #hallway9{
+            top: 550px; /* Position from top */
+            left: -430px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Rooms/hallway9.png')
+        }
+        #hallway10{
+            top: 550px; /* Position from top */
+            left: -355px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Rooms/hallway10.png')
+        }
+        #hallway11{
+            top: 550px; /* Position from top */
+            left: -280px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Rooms/hallway11.png')
+        }
+        #hallway12{
+            top: 550px; /* Position from top */
+            left: -215px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Rooms/hallway12.png')
+        }
+        #profplum{
+            top: 50px; /* Position from top */
+            left: -1030px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Characters/professor_plum.png')
+        }
+        #colmustard{
+            top: 50px; /* Position from top */
+            left: -955px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Characters/colonel_mustard.png')
+        }
+        #mrgreen{
+            top: 50px; /* Position from top */
+            left: -880px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Characters/mr_green.png')
+        }
+        #missscarlet{
+            top: 50px; /* Position from top */
+            left: -805px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Characters/miss_scarlet.png')
+        }
+        #mrspeacock{
+            top: 50px; /* Position from top */
+            left: -730px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Characters/mrs_peacock.png')
+        }
+        #mrswhite{
+            top: 50px; /* Position from top */
+            left: -655px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Characters/mrs_white.png')
+        }
+        #mrswhite{
+            top: 50px; /* Position from top */
+            left: -655px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Characters/mrs_white.png')
+        }
+        #mrswhite{
+            top: 50px; /* Position from top */
+            left: -655px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Characters/mrs_white.png')
+        }
+        #candle{
+            top: 550px; /* Position from top */
+            left: -1030px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Weapons/candle.png')
+        }
+        #knife{
+            top: 550px; /* Position from top */
+            left: -955px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Weapons/knife.png')
+        }
+        #pipe{
+            top: 550px; /* Position from top */
+            left: -880px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Weapons/pipe.png')
+        }
+        #revolver{
+            top: 550px; /* Position from top */
+            left: -805px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Weapons/revolver.png')
+        }
+        #rope{
+            top: 550px; /* Position from top */
+            left: -730px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Weapons/rope.png')
+        }
+        #wrench{
+            top: 550px; /* Position from top */
+            left: -655px; /* Position from left */
+            width: 98%; 
+            height: 275%;
+            background-repeat: no-repeat;
+            background-image:url('static/Cards/Weapons/wrench.png')
+        }
+        .selected {
+        filter: brightness(70%); /* Adjust brightness for selected card */
+        }
+
+
         .bold { font-weight: bold; }
     
         td, th {
@@ -248,6 +595,7 @@
         }
         
         /* table {margin:4px} */
+
     </style>
     
 </head>
@@ -262,6 +610,8 @@
         <div class="purple" id = "Prof. Plum" style="top: 310px; left: 170px;"></div>
         <div class="white" id = "Mrs. White" style="top: 680px; left: 590px;"></div>
         <div class="yellow" id = "Col. Mustard" style="top: 310px; left: 750px;"></div>
+
+        <div class="room" id="study"></div>
     </div>
     <div class ="rightcol"> 
         
@@ -291,19 +641,19 @@
 
     <div class = "movebutton">
         <!--This will have to be changed to selecting the location to move to-->
-        <button onclick = "showMoveList()" id="move-button" disabled>Move</button>
+        <button onclick = "showMoveList()" id="move-button" >Move</button>
     </div>
 
     <div class = "suggestbutton">
-        <button onclick = "showSuggestList()" id="suggest-button" disabled>Suggest</button>
+        <button onclick = "showSuggestList()" id="suggest-button" >Suggest</button>
     </div>
 
     <div class = "accusebutton">
-        <button onclick = "showAccuseList()" id="accuse-button" disabled>Accuse</button>
+        <button onclick = "showAccuseList()" id="accuse-button" >Accuse</button>
     </div>
 
     <div class = "endbutton">
-        <button onclick = "showEndTurn()" id="end-button" disabled>End Turn</button>
+        <button onclick = "showEndTurn()" id="end-button" >End Turn</button>
     </div>
 
     <div class = "serverchat" id="serverchat">
@@ -318,101 +668,92 @@
 
     <div id = "accuseRadio" class = "radio-list-accuse">
         <form>
-            <h3>Weapon</h3>
+            <h3>Characters,rooms,Weapons </h3>
             <label>
-                <input type="radio" name="Weapon" value="Candlestick"> Candlestick
-                <input type="radio" name="Weapon" value="Knife"> Knife
-                <input type="radio" name="Weapon" value="Revolver"> Revolver
-                <input type="radio" name="Weapon" value="Lead Pipe"> Lead Pipe
-                <input type="radio" name="Weapon" value="Wrench"> Wrench
-                <input type="radio" name="Weapon" value="Rope"> Rope
+                <div class="card" name="Character" id="profplum" value="Prof. Plum"></div>
+                <div class="card" name="Character" id="colmustard" value="Col. Mustard"></div>
+                <div class="card" name="Character" id="mrgreen" value="Mr. Green"></div>
+                <div class="card" name="Character" id="missscarlet" value="Miss Scarlet"></div>
+                <div class="card" name="Character" id="mrspeacock" value="Mrs. Peacock"></div>
+                <div class="card" name="Character" id="mrswhite" value="Mrs. White"></div>
             </label>
-            <h3>Character</h3>
             <label>
-                <input type="radio" name="Character" value="Miss Scarlet"> Miss Scarlet
-                <input type="radio" name="Character" value="Mrs. Peacock"> Mrs. Peacock 
-                <input type="radio" name="Character" value="Mrs. White"> Mrs. White 
-                <input type="radio" name="Character" value="Col Mustard"> Col. Mustard 
-                <input type="radio" name="Character" value="Mr. Green"> Mr. Green
-                <input type="radio" name="Character" value="Prof Plum"> Prof Plum 
+                <div class="card" name="Location" id="ballroom" value="Ballroom"></div>
+                <div class="card" name="Location" id="hall" value="Hall"></div>
+                <div class="card" name="Location" id="conservatory" value="conservatory"></div>
+                <div class="card" name="Location" id="diningroom" value="Dining"></div>
+                <div class="card" name="Location" id="billardroom" value="Billiard Room"></div>
+                <div class="card" name="Location" id="kitchen" value="Kitchen"></div>
+                <div class="card" name="Location" id="library" value="Library"></div>
+                <div class="card" name="Location" id="lounge" value="Lounge"></div>
+                <div class="card" name="Location" id="studyroom" value="Study"></div>   
             </label>
-            <h3>Location</h3>
-            <label>
-                <input type="radio" name="Location" value="Kitchen"> Kitchen
-                <input type="radio" name="Location" value="Study"> Study
-                <input type="radio" name="Location" value="Billiard Room"> Billiard Room
-                <input type="radio" name="Location" value="Lounge"> Lounge
-                <input type="radio" name="Location" value="Library"> Library
-                <input type="radio" name="Location" value="Conservatory"> Conservatory
-                <input type="radio" name="Location" value="Hall"> Hall
-                <input type="radio" name="Location" value="Ballroom"> Ballroom
-                <input type="radio" name="Location" value="Dining Room"> Dining Room
+                <div class="card" name="Weapon" id="candle" value="Candlestick"></div>
+                <div class="card" name="Weapon" id="knife" value="Knife"></div>
+                <div class="card" name="Weapon" id="pipe" value="Lead Pipe"></div>
+                <div class="card" name="Weapon" id="revolver" value="Revolver"></div>
+                <div class="card" name="Weapon" id="rope" value="Rope"></div>
+                <div class="card" name="Weapon" id="wrench" value="Wrench"></div>
             </label>
             <input type = "submit" value = "Submit" id ="accusation">
         </form>
     </div>
 
+    
+    
     <div id = "moveRadio" class = "radio-list-move">
-        <form id = "positionForm">
+        
+        <form id = "positionForm" class="background" >
+            
             <h3>Location</h3>
+                
             <label>
-                <input type="radio" name="Location2" value="Study"> Study
-                <input type="radio" name="Location2" value="Hall1"> Hall1
-                <input type="radio" name="Location2" value="Hall"> Hall
-                <input type="radio" name="Location2" value="Hall2"> Hall2
-                <input type="radio" name="Location2" value="Lounge"> Lounge
-                <input type="radio" name="Location2" value="Hall3"> Hall3
-                <input type="radio" name="Location2" value="Hall4"> Hall4
-                <input type="radio" name="Location2" value="Hall5"> Hall5
-                <input type="radio" name="Location2" value="Library"> Library
-                <input type="radio" name="Location2" value="Hall6"> Hall6
-                <input type="radio" name="Location2" value="Billiard"> Billiard Room
-                <input type="radio" name="Location2" value="Hall7"> Hall7
-                <input type="radio" name="Location2" value="Dining"> Dining Room
-                <input type="radio" name="Location2" value="Hall8"> Hall8
-                <input type="radio" name="Location2" value="Hall9"> Hall9
-                <input type="radio" name="Location2" value="Hall10"> Hall10
-                <input type="radio" name="Location2" value="Conservatory"> Conservatory 
-                <input type="radio" name="Location2" value="Hall11"> Hall11               
-                <input type="radio" name="Location2" value="Ballroom"> Ballroom
-                <input type="radio" name="Location2" value="Hall12"> Hall12
-                <input type="radio" name="Location2" value="Kitchen"> Kitchen
+                <div class="card" name="Location" id="ballroom" value="Ballroom"></div>
+                <div class="card" name="Location" id="hall" value="Hall"></div>
+                <div class="card" name="Location" id="hallway1" value="Hall1"></div>
+                <div class="card" name="Location" id="hallway2" value="Hall2"></div>
+                <div class="card" name="Location" id="hallway3" value="Hall3"></div>
+                <div class="card" name="Location" id="hallway4" value="Hall4"></div>
+                <div class="card" name="Location" id="hallway5" value="Hall5"></div>
+                <div class="card" name="Location" id="hallway6" value="Hall6"></div>
+                <div class="card" name="Location" id="hallway7" value="Hall7"></div>
+                <div class="card" name="Location" id="hallway8" value="Hall8"></div>
+                <div class="card" name="Location" id="hallway9" value="Hall9"></div>
+                <div class="card" name="Location" id="hallway10" value="Hall10"></div>
+                <div class="card" name="Location" id="hallway11" value="Hall11"></div>
+                <div class="card" name="Location" id="hallway12" value="Hall12"></div>
+                <div class="card" name="Location" id="conservatory" value="Conservatory"></div>
+                <div class="card" name="Location" id="diningroom" value="Dining"></div>
+                <div class="card" name="Location" id="billardroom" value="Billiard"></div>
+                <div class="card" name="Location" id="kitchen" value="Kitchen"></div>
+                <div class="card" name="Location" id="library" value="Library"></div>
+                <div class="card" name="Location" id="lounge" value="Lounge"></div>
+                <div class="card" name="Location" id="studyroom" value="Study"></div>
+    
             </label>
             <input type = "submit" value = "Submit" id = "movesubmit">
         </form>
     </div>
-    
     <div id = "suggestRadio" class = "radio-list-suggest">
         <form>
-            <h3>Character</h3>
+            <h3>Character,Room, Weapon</h3>
             <label>
-                <input type="radio" name="Character" value="Miss Scarlet"> Miss Scarlet
-                <input type="radio" name="Character" value="Mrs. Peacock"> Mrs. Peacock 
-                <input type="radio" name="Character" value="Mrs. White"> Mrs. White 
-                <input type="radio" name="Character" value="Col. Mustard"> Col. Mustard 
-                <input type="radio" name="Character" value="Mr. Green"> Mr. Green
-                <input type="radio" name="Character" value="Prof. Plum"> Prof Plum 
+                
+                <div class="card" name="Character" id="profplum" value="Prof. Plum"></div>
+                <div class="card" name="Character" id="colmustard" value="Col. Mustard"></div>
+                <div class="card" name="Character" id="mrgreen" value="Mr. Green"></div>
+                <div class="card" name="Character" id="missscarlet" value="Miss Scarlet"></div>
+                <div class="card" name="Character" id="mrspeacock" value="Mrs. Peacock"></div>
+                <div class="card" name="Character" id="mrswhite" value="Mrs. White"></div>
             </label>
-            <h3>Weapon</h3>
-            <label>
-                <input type="radio" name="Weapon" value="Candlestick"> Candlestick
-                <input type="radio" name="Weapon" value="Knife"> Knife
-                <input type="radio" name="Weapon" value="Revolver"> Revolver
-                <input type="radio" name="Weapon" value="Lead Pipe"> Lead Pipe
-                <input type="radio" name="Weapon" value="Wrench"> Wrench
-                <input type="radio" name="Weapon" value="Rope"> Rope
-            </label>
-            <h3>Room</h3>
-            <label>
-                <input type="radio" name="Location" value="Kitchen"> Kitchen
-                <input type="radio" name="Location" value="Study"> Study
-                <input type="radio" name="Location" value="Billiard"> Billiard Room
-                <input type="radio" name="Location" value="Lounge"> Lounge
-                <input type="radio" name="Location" value="Library"> Library
-                <input type="radio" name="Location" value="Conservatory"> Conservatory
-                <input type="radio" name="Location" value="Hall"> Hall
-                <input type="radio" name="Location" value="Ballroom"> Ballroom
-                <input type="radio" name="Location" value="Dining"> Dining Room
+            
+                <div class="card" name="Weapon" id="candle" value="Candlestick"></div>
+                <div class="card" name="Weapon" id="knife" value="Knife"></div>
+                <div class="card" name="Weapon" id="pipe" value="Lead Pipe"></div>
+                <div class="card" name="Weapon" id="revolver" value="Revolver"></div>
+                <div class="card" name="Weapon" id="rope" value="Rope"></div>
+                <div class="card" name="Weapon" id="wrench" value="Wrench"></div>
+                
             </label>
             <input type = "submit" value = "Submit" id = "suggestionsubmit">
         </form>
@@ -423,38 +764,36 @@
             <span class="close" onclick="closeSuggestModal()">&times;</span>
             <div id = "suggestRadio" class = "radio-list-suggest"></div><p>Can you disprove?</p>
                 <form>
-                    <h3>Character</h3>
+                    <h3>Character,Room, Weapon</h3>
                     <label>
-                        <input type="radio" name="Character" value="Miss Scarlet"> Miss Scarlet
-                        <input type="radio" name="Character" value="Mrs. Peacock"> Mrs. Peacock 
-                        <input type="radio" name="Character" value="Mrs. White"> Mrs. White 
-                        <input type="radio" name="Character" value="Col Mustard"> Col. Mustard 
-                        <input type="radio" name="Character" value="Mr. Green"> Mr. Green
-                        <input type="radio" name="Character" value="Prof Plum"> Prof Plum 
-                        <input type="radio" name="Character" value="Dr. Orchid"> Dr. Orchid 
-                        <input type="radio" name="Character" value="Miss Peach"> Miss Peach 
+                        
+                        <div class="card" name="Character" id="profplum" value="Prof. Plum"></div>
+                        <div class="card" name="Character" id="colmustard" value="Col. Mustard"></div>
+                        <div class="card" name="Character" id="mrgreen" value="Mr. Green"></div>
+                        <div class="card" name="Character" id="missscarlet" value="Miss Scarlet"></div>
+                        <div class="card" name="Character" id="mrspeacock" value="Mrs. Peacock"></div>
+                        <div class="card" name="Character" id="mrswhite" value="Mrs. White"></div>
                     </label>
-                    <h3>Weapon</h3>
                     <label>
-                        <input type="radio" name="Weapon" value="Candlestick"> Candlestick
-                        <input type="radio" name="Weapon" value="Knife"> Knife
-                        <input type="radio" name="Weapon" value="Revolver"> Revolver
-                        <input type="radio" name="Weapon" value="Lead Pipe"> Lead Pipe
-                        <input type="radio" name="Weapon" value="Wrench"> Wrench
-                        <input type="radio" name="Weapon" value="Rope"> Rope
+                        <div class="card" name="Location" id="ballroom" value="Ballroom"></div>
+                        <div class="card" name="Location" id="hall" value="Hall"></div>
+                        <div class="card" name="Location" id="conservatory" value="Conservatory"></div>
+                        <div class="card" name="Location" id="diningroom" value="Dining"></div>
+                        <div class="card" name="Location" id="billardroom" value="Billiard"></div>
+                        <div class="card" name="Location" id="kitchen" value="kitchen"></div>
+                        <div class="card" name="Location" id="library" value="Library"></div>
+                        <div class="card" name="Location" id="lounge" value="Lounge"></div>
+                        <div class="card" name="Location" id="studyroom" value="Study"></div>   
                     </label>
-                    <h3>Room</h3>
-                    <label>
-                        <input type="radio" name="Location" value="Kitchen"> Kitchen
-                        <input type="radio" name="Location" value="Study"> Study
-                        <input type="radio" name="Location" value="Billiard"> Billiard Room
-                        <input type="radio" name="Location" value="Lounge"> Lounge
-                        <input type="radio" name="Location" value="Library"> Library
-                        <input type="radio" name="Location" value="Conservatory"> Conservatory
-                        <input type="radio" name="Location" value="Hall"> Hall
-                        <input type="radio" name="Location" value="Ballroom"> Ballroom
-                        <input type="radio" name="Location" value="Dining"> Dining Room
+                        <div class="card" name="Weapon" id="candle" value="Candlestick"></div>
+                        <div class="card" name="Weapon" id="knife" value="Knife"></div>
+                        <div class="card" name="Weapon" id="pipe" value="Lead Pipe"></div>
+                        <div class="card" name="Weapon" id="revolver" value="Revolver"></div>
+                        <div class="card" name="Weapon" id="rope" value="Rope"></div>
+                        <div class="card" name="Weapon" id="wrench" value="Wrench"></div>
+                        
                     </label>
+                    
                     <input id="modalsubmit" type = "submit" value = "Submit">
                 </form>
                 
@@ -480,9 +819,88 @@
         var suggestContainer = document.getElementById('suggestRadio');
         var accuseContainer = document.getElementById('accuseRadio');
         var endTurnContainer = document.getElementById('endTurnContainer');
+        var suggestModal = document.getElementById('suggestModal');
 
         document.onmousemove=getCursorPos;
         var output = document.getElementById('output');
+        
+        
+        const cards = document.querySelectorAll('.card, .ballroom, .hall, .conservatory, .diningroom, .billardroom, .library, .lounge, .studyroom');
+        let selectedCard = null;
+        let selectedlocationCard = null;
+        let selectedweaponCard = null;
+        let selectedcharacterCard = null;
+        
+        function handleCardHover(event) {
+            
+        event.target.style.transition = 'transform 0.6s ease'; // Adding transition for transform property
+        event.target.style.transform = 'translateY(-50px) scale(0.55)'; // Move the card up by 200 pixels
+        event.target.style.zIndex = '9999'; // Set a higher z-index to bring it to the front
+        }
+
+        function handleCardLeave(event) {
+            if (event.target !== selectedCard) {
+                event.target.style.transition = 'transform 0.6s ease'; // Adding transition for transform property
+                event.target.style.transform = 'scale(.5)';;
+                event.target.style.zIndex = 'auto';
+            }
+        }
+
+        function handleCardClick(event) {
+            const currentCard = event.target;
+            const cardName = currentCard.getAttribute('name'); // Get the name attribute of the clicked card
+
+            // Find all cards with the same 'name' as the clicked card
+            const sameGroupCards = document.querySelectorAll('.card[name="' + cardName + '"]');
+
+            // Deselect all cards in the same group
+            sameGroupCards.forEach(card => {
+                card.classList.remove('selected');
+            });
+
+            // Select the clicked card
+            currentCard.classList.add('selected');
+            
+            // Retrieve the value of the clicked card
+            var value = currentCard.getAttribute('value');
+            console.log('Clicked card value:', value);
+            selectedCardValue = currentCard.getAttribute('value');
+        }
+        function deselectAllCards() {
+            const allSelectedCards = document.querySelectorAll('.card.selected');
+            allSelectedCards.forEach(card => {
+                card.classList.remove('selected');
+            });
+        }
+
+
+        cards.forEach(card => {
+        card.addEventListener('mouseenter', handleCardHover);
+        card.addEventListener('mouseleave', handleCardLeave);
+        card.addEventListener('click', handleCardClick);
+        });
+
+
+        // Function to move the sprite to a specific room
+        function moveToRoom(roomId) {
+            const room = document.getElementById(roomId);
+            const player = document.getElementById('player');
+            const roomRect = room.getBoundingClientRect(); // Get room's position and size
+
+            // Calculate the target position (center of the room)
+            const targetX = roomRect.left + roomRect.width / 2 - player.offsetWidth / 2;
+            const targetY = roomRect.top + roomRect.height / 2 - player.offsetHeight / 2;
+
+            // Apply transition to animate the sprite's movement
+            player.style.transition = 'top 1s, left 1s';
+            player.style.top = `${targetY}px`;
+            player.style.left = `${targetX}px`;
+
+            // Remove the transition after the movement is complete
+            setTimeout(() => {
+                player.style.transition = '';
+            }, 1000); // Adjust the timing to match the transition duration
+        }
         function getCursorPos(a)
         {
         var posx = a.clientX;
@@ -574,6 +992,10 @@
             document.getElementById('suggestModal').style.display = 'block';
         }
 
+        span.onclick = function() {
+            suggestModal.style.display = "none";
+        }
+
         // Function to close the Suggest Modal
         function closeSuggestModal() {
             document.getElementById('suggestModal').style.display = 'none';
@@ -645,6 +1067,8 @@
             {
                 moveContainer.style.display = "none";
             }
+
+            
         }
 
         function showEndTurn(){
@@ -658,6 +1082,7 @@
             }
             else
             {
+                
                 endTurnContainer.style.display = "none";
             }
 
