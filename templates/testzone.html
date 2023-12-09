@@ -144,7 +144,10 @@
             // Message recieved from server
             socket.on('message_from_server', function(data) {
                 var text = data['text'];
-                document.getElementById("chat").innerHTML += text + "\n\n";   
+                var chat = document.getElementById("chat");
+                chat.innerHTML += text + "<br><br>";   
+                // Update scroll to show newest messages
+                chat.scrollTop = chat.scrollHeight;
             });
 
             socket.on('showsuggestmodal', function(data){
@@ -153,20 +156,20 @@
                 }                
             });
 
-            socket.on('playerinfo', function(data) {
-                console.log(data);
-                playername = data['playername'];
-                playercharacter = data['character'];
-                document.getElementById('playerinfooutput').innerText = "Player Name: " + playername + "\nPlayer Character: " + playercharacter;
-            });
+            // socket.on('playerinfo', function(data) {
+            //     console.log(data);
+            //     playername = data['playername'];
+            //     playercharacter = data['character'];
+            //     document.getElementById('playerinfooutput').innerText = "Player Name: " + playername + "\nPlayer Character: " + playercharacter;
+            // });
 
-            socket.on('playercard', function(data){
-                if (x == 1){
-                    document.getElementById('cardoutput').innerText += "\n";
-                    x = 0;
-                }
-                document.getElementById('cardoutput').innerText += data['cardtype'] +", " + data['cardname'] + "\n";
-            });
+            // socket.on('playercard', function(data){
+            //     if (x == 1){
+            //         document.getElementById('cardoutput').innerText += "\n";
+            //         x = 0;
+            //     }
+            //     document.getElementById('cardoutput').innerText += data['cardtype'] +", " + data['cardname'] + "\n";
+            // });
 
             socket.on('casefilebackdoor', function(data){
                 event.preventDefault();
@@ -626,16 +629,29 @@
         <div id = "cardoutput">Card Type, Card Name</div>
     </div> -->
     <div class = "notebook">
-        <table id="notebook" style="empty-cells: show; width: 100%; padding-top:30px">
-            <tr><th colspan="11">Suspects</th></tr>
-            <tr><th colspan="11">&nbsp;</th></tr>
-            <tr><th colspan="11">Weapons</th></tr>
-            <tr><th colspan="11">&nbsp;</th></tr>
-            <tr><th colspan="11">Rooms</th></tr>
-        </table>
-        <div class="submitbutton" style="display: none">
-            <!-- Button for submitting accuse and suggestions -->
-            <button>Submit</button>
+        <div style="height:17vh;">
+            &nbsp;
+        </div>
+        <div>
+            <div>
+                <table style="width:100%; border:none;">
+                    <tr style="border:none">
+                        <td style="width:50%; text-align:right; border:none;">Username:</td>
+                        <td id="user-name" style="border:none"></td>
+                    </tr>
+                    <tr>
+                        <td style="width:50%; text-align:right; border:none;">Character:</td>
+                        <td id="player-character" style="border:none"></td>
+                    </tr>
+                </table>
+            </div>
+            <table id="notebook" style="empty-cells: show; width: 100%;">
+                <tr><th colspan="11">Suspects</th></tr>
+                <tr><th colspan="11">&nbsp;</th></tr>
+                <tr><th colspan="11">Weapons</th></tr>
+                <tr><th colspan="11">&nbsp;</th></tr>
+                <tr><th colspan="11">Rooms</th></tr>
+            </table>
         </div>
     </div>
 
@@ -657,7 +673,7 @@
     </div>
 
     <div class = "serverchat" id="serverchat">
-        <div id="chat" style="text-align: justify; overflow:auto;padding:10px; position:fixed; width:45.5vh; height:80vh; border: 1px solid #000000;"></div>
+        <div id="chat" style="text-align: justify; overflow:auto;padding:20px; position:fixed; width:45.5vh; height:80vh; border: 1px solid #000000;"></div>
         <!-- <textarea id="chat" style="width: 100%; height: 90%; font-size: 18px; font-family: monospace; margin-top: 10px;"></textarea> -->
         <div style="position:fixed; top:83vh; width:100%; height: 20%; padding:20px; align-items:center;">
             <input type="text" id="chat-text" style="width:18.5%">
@@ -958,11 +974,11 @@
                 cell.style.class = "bold";
         
                 cell.onclick = function() {
-                                    if (this.style.fontWeight == "bold") {
-                                        this.style.fontWeight = "normal";
+                                    if (this.style.fontWeight == "normal") {
+                                        this.style.fontWeight = 1000;
                                     }
                                     else {
-                                        this.style.fontWeight = "bold";
+                                        this.style.fontWeight = "normal";
                                     }                                  
                                 };
                                 
