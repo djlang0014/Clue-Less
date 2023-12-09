@@ -91,9 +91,12 @@ socketio = SocketIO(application, logger=True, manage_session=False)
 
 # create database connection with credentials
 # can remove all other psycopg.connect() lines
-conn = psycopg.connect(f"dbname={DB_NAME} user={DB_USERNAME} password={DB_PASSWORD}")
-# application.secret_key = os.urandom(24)  
 
+
+application.secret_key = os.urandom(24)  
+
+conn = psycopg.connect(f"dbname={DB_NAME} user={DB_USERNAME} password={DB_PASSWORD}")
+ 
 # Send HTML!
 @application.route('/')
 def root():
@@ -374,6 +377,14 @@ def testzone():
 @socketio.on('connect')
 def test_connect():
     socketio.emit('after connect', {'data':'Connected to Flask Socket.'})
+
+@socketio.on('chat_message')
+def chat_message(data):
+    username = session['username']
+    roomCode = session['roomCode']
+    text = data['text']
+
+    socketio.emit("message_from_server", {'text': username+": "+text}, to=roomCode)
 
 @socketio.on('message')
 def handle_message(data):
