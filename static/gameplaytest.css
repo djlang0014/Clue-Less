@@ -36,6 +36,11 @@ body {
     background-size: cover; 
     position: absolute; 
 }
+.scarlet{
+    background-image: url('spritesheet.png');
+    width: 25px;
+    height: 31px;
+}
 .blue{
     position: relative;
     width: 21px; 
