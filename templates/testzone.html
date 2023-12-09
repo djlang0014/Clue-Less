@@ -45,19 +45,19 @@
             socket = io.connect('http://' + document.domain + ':' + location.port);
             socket.emit('init_game');
 
-            document.getElementById("getinfo").onclick = function(){
-                // Get the text value
-                event.preventDefault()
-                var text = document.getElementById("testo").value;
+            // document.getElementById("getinfo").onclick = function(){
+            //     // Get the text value
+            //     event.preventDefault()
+            //     var text = document.getElementById("testo").value;
                 
-                socket.emit('backdoor', {'text':'test'})
+            //     socket.emit('backdoor', {'text':'test'})
 
-                // Emit a message to the 'send_message' socket
-                socket.emit('request_player_info', {'text':text});
+            //     // Emit a message to the 'send_message' socket
+            //     socket.emit('request_player_info', {'text':text});
 
-                // Set the textfield input to empty
-                document.getElementById("testo").value = "";
-            }
+            //     // Set the textfield input to empty
+            //     document.getElementById("testo").value = "";
+            // }
 
             var cards = document.querySelectorAll('.card');
 
@@ -637,19 +637,19 @@
 
     <div class = "movebutton">
         <!--This will have to be changed to selecting the location to move to-->
-        <button onclick = "showMoveList()" id="move-button" disabled>Move</button>
+        <button onclick = "showMoveList()" id="move-button" >Move</button>
     </div>
 
     <div class = "suggestbutton">
-        <button onclick = "showSuggestList()" id="suggest-button" disabled>Suggest</button>
+        <button onclick = "showSuggestList()" id="suggest-button" >Suggest</button>
     </div>
 
     <div class = "accusebutton">
-        <button onclick = "showAccuseList()" id="accuse-button" disabled>Accuse</button>
+        <button onclick = "showAccuseList()" id="accuse-button" >Accuse</button>
     </div>
 
     <div class = "endbutton">
-        <button onclick = "showEndTurn()" id="end-button" disabled>End Turn</button>
+        <button onclick = "showEndTurn()" id="end-button" >End Turn</button>
     </div>
 
     <div class = "serverchat" id="serverchat">
@@ -815,7 +815,7 @@
         var suggestContainer = document.getElementById('suggestRadio');
         var accuseContainer = document.getElementById('accuseRadio');
         var endTurnContainer = document.getElementById('endTurnContainer');
-        var suggestModal = documnet.getElementById('suggestModal');
+        var suggestModal = document.getElementById('suggestModal');
 
         document.onmousemove=getCursorPos;
         var output = document.getElementById('output');
