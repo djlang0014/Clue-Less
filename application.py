@@ -54,6 +54,18 @@ cardLocationList = [
     Card("Location", "Ballroom"),
     Card("Location", "Kitchen"),
 ]
+
+suggestionLocations = [
+    "Study",
+    "Hall",
+    "Lounge",
+    "Library",
+    "Billiard",
+    "Dining",
+    "Conservatory",
+    "Ballroom",
+    "Kitchen",
+]
     
 
 locationList = [
@@ -406,7 +418,7 @@ def get_available_locations(data):
     currentLocation = getPlayerCurrentLocation(player.sid, roomCode)
 
     available_locations = gameInstance.findAvailableLocations(player.sid, currentLocation)
-    
+
     for location in available_locations:
         if checkIfHallwayAndOccupied(roomCode, location) == True:
             available_locations.remove(location)
@@ -439,16 +451,36 @@ def accusation(data):
 def suggestion(data):
     suggestWeapon = data['weapon']
     suggestSuspect = data['suspect']
+    username = session['username']
     roomCode = session['roomCode']
-    suggestRoom = gameRooms[roomCode].getPlayerLocation(session['username'])
+    player = gameRooms[roomCode].playersDict[username]
+    print(player)
+    print(username, gameRooms[roomCode])
+    suggestRoom = gameRooms[roomCode].getPlayerLocation(player.sid)
     
-    player = gameRooms[roomCode].playersDict[session['username']]
+    if suggestRoom not in suggestionLocations:
+        socketio.emit('message_from_server', {'text': player.name + ' cannot make a suggestion from there.'}, to=roomCode)
+        return
+    
     name = player.name
 
     suggestionString = "" + suggestWeapon + ", " + suggestSuspect + ", " + suggestRoom + "."
 
     socketio.emit('message_from_server', {'text': name + ' suggested: ' + suggestionString}, to=roomCode)
     socketio.emit('showsuggestmodal', {'player': name}, to=roomCode)
+
+@socketio.on('getcards')
+def getcards(data):
+    roomCode = session['roomCode']
+    username = session['username']
+    player = gameRooms[roomCode].playersDict[username]
+    playerCards = player.getPlayerCards()
+    playerCardNames = []
+
+    for card in playerCards:
+        playerCardNames.append(card.cardName)
+    print("here")
+    socketio.emit("modalcards", {'cards': playerCardNames}, to=player.sid)
 
 @socketio.on('suggestionreply')
 def suggestionreply(data):
@@ -459,7 +491,28 @@ def suggestionreply(data):
     character = data['suspect']
     room = data['room']
     #TODO: Need to get the SID of the suggesting player!
-    socketio.emit('message_from_server', {'text': name + ' showed ' + character + ' + ' + weapon + ' + ' + room + '.'}, to=roomCode)
+    #This is not the most graceful way to display this as it does not account for any other combinations
+    returnString = name + " showed: "
+
+    if weapon != None:
+        returnString += weapon
+
+        if character != None:
+            returnString += " + "
+
+    if character != None:
+        returnString += character
+
+        if room != None:
+            returnString += " + "
+
+    if room != None:
+        returnString += room + "."
+
+    if returnString == name + "showed: .":
+        returnString = name + "showed nothing."
+
+    socketio.emit('message_from_server', {'text': returnString}, to=roomCode)
 
 def accusation(accString):
     numstring = accString.split(',')
