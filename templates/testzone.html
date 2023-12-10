@@ -15,28 +15,53 @@
         var filesuspect;
         var filelocation;
         var fileweapon;
+        var playercards = [];
+
+        const locationnames = [
+            "Study",
+            "Hall1",
+            "Hall",
+            "Hall2",
+            "Lounge",
+            "Hall3",
+            "Hall4",
+            "Hall5",
+            "Library",
+            "Hall6",
+            "Billiard",
+            "Hall7",
+            "Dining",
+            "Hall8",
+            "Hall9",
+            "Hall10",
+            "Conservatory",
+            "Hall11",
+            "Ballroom",
+            "Hall12",
+            "Kitchen"
+        ]
 
         var locations = {
             Study: {top:215, left: 225},
-            Hallway1: {top:215, left: 350},
+            Hall1: {top:215, left: 350},
             Hall: {top:215, left: 470},
-            Hallway2: {top:215, left: 610},
+            Hall2: {top:215, left: 610},
             Lounge: {top:215, left: 730},
-            Hallway3: {top:315, left: 225},
-            Hallway4: {top:315, left: 470},
-            Hallway5: {top:315, left: 730},
+            Hall3: {top:315, left: 225},
+            Hall4: {top:315, left: 470},
+            Hall5: {top:315, left: 730},
             Library: {top:415, left: 225},
-            Hallway6: {top:415, left:350},
+            Hall6: {top:415, left:350},
             Billiard: {top:415, left:470},
-            Hallway7: {top:415, left:610},
+            Hall7: {top:415, left:610},
             Dining: {top:415, left:730},
             Hall8: {top:540, left: 225},
             Hall9: {top:540, left: 470},
-            Hallway10: {top:540, left: 730},
+            Hall10: {top:540, left: 730},
             Conservatory: {top:640, left: 225},
-            Hallway11: {top:640, left: 350},
+            Hall11: {top:640, left: 350},
             Ballroom: {top:640, left: 470},
-            Hallway12: {top:640, left: 610},
+            Hall12: {top:640, left: 610},
             Kitchen: {top:640, left: 730}
         }
 
@@ -72,6 +97,11 @@
                 var location = selectedLocation ? selectedLocation.getAttribute('value') : null;
                 socket.emit('move_character', {'character':playercharacter, 'location':location});
                 deselectAllCards();
+                moveContainer.style.display = "none";
+                var boxes = document.getElementsByClassName('locationBox');
+                while(boxes[0]) {
+                    boxes[0].parentNode.removeChild(boxes[0]);
+                }
             }
 
             document.getElementById("accusation").onclick = function() {
@@ -92,9 +122,10 @@
                 } 
                 deselectAllCards();
             }
-            
+
             document.getElementById("suggestionsubmit").onclick = function(){
                 event.preventDefault();
+                
                 var selectedWeapon = document.querySelector('.card[name="Weapon"].selected');
                 var selectedCharacter = document.querySelector('.card[name="Character"].selected');
 
@@ -126,6 +157,9 @@
                     // Emit the suggestion event to the server with the selected values
                     socket.emit('suggestion', {'weapon': weapon, 'suspect': character, 'room': location});
                 } 
+                console.log('here')
+                socket.emit('suggestionreply', {'weapon': weapon, 'suspect': character, 'room': location});
+                deselectAllCards();
                 closeSuggestModal();
             }
 
@@ -142,6 +176,24 @@
                 document.getElementById("chat-text").value = "";
             }
 
+            document.getElementById("move-button").onclick = function(){
+                event.preventDefault();
+                moveRadioDisplay = document.getElementById("moveRadio").style.display;
+
+                if (moveRadioDisplay == "grid"){
+                    var boxes = document.getElementsByClassName('locationBox');
+                    while(boxes[0]) {
+                        boxes[0].parentNode.removeChild(boxes[0]);
+                    }
+                    document.getElementById("moveRadio").style.display = "none";
+                }
+                else{
+                    socket.emit('get_available_locations', {'character':playercharacter});
+                }
+
+                
+            }
+
             // Message recieved from server
             socket.on('message_from_server', function(data) {
                 var text = data['text'];
@@ -150,9 +202,12 @@
 
             socket.on('showsuggestmodal', function(data){
                 if (playername != data['player']){
-                    openSuggestModal();
-                }                
+                    socket.emit('getcards', {'player':playername});
+                }  
+                              
             });
+
+            
 
             socket.on('playerinfo', function(data) {
                 console.log(data);
@@ -163,10 +218,11 @@
 
             socket.on('playercard', function(data){
                 if (x == 1){
-                    document.getElementById('cardoutput').innerText += "\n";
+                    document.getElementById('cardoutput').innerText += "<br />";
                     x = 0;
                 }
-                document.getElementById('cardoutput').innerText += data['cardtype'] +", " + data['cardname'] + "\n";
+                playercards.push(data['cardname']);
+                document.getElementById('cardoutput').innerText += data['cardtype'] +", " + data['cardname'] + "<br />";
             });
 
             socket.on('casefilebackdoor', function(data){
@@ -206,6 +262,67 @@
                 document.getElementById("suggest-button").disabled = true;
                 document.getElementById("accuse-button").disabled = true;
                 document.getElementById("end-button").disabled = true;
+            });
+            
+            socket.on('available_locations', function(data){
+                i = 0;
+                console.log(data['locations'])
+                console.log(locationnames.length)
+                for (i < 0; i < locationnames.length; i++){
+                    console.log(locationnames[i])
+                    console.log(i)
+                    if (data['locations'].includes(locationnames[i])){
+                        console.log('here!')
+                        var locationCard = document.getElementById('positionForm').querySelector('#' + locationnames[i]);
+                        console.log(locationCard)
+                        locationCard.hidden = false;
+                        console.log(locationCard)
+                        var box = document.createElement('div');
+                        locationArea = locations[locationnames[i]];
+                        console.log(locationArea, locationArea.top, locationArea.left)
+                        box.className = 'locationBox';
+                        box.style.top = locationArea.top + 'px';
+                        box.style.left = locationArea.left + 'px';
+                        document.querySelector('.wrapper').appendChild(box);
+                        console.log(box)
+                    }
+                    else{
+                        var locationCard = document.getElementById('positionForm').querySelector('#' + locationnames[i]);
+                        locationCard.hidden = true;
+                    }
+
+                }
+                showMoveList();
+            });
+
+            //this is functional for making only the cards the player has appear
+            //however, you are allowed to lie when counter suggesting so maybe we don't need this
+
+            //socket.on('modalcards', function(data){
+            //    //get by value
+            //    var modalCards = document.getElementById('modalContent').querySelectorAll('.card');
+            //    console.log(data['cards'])
+            //    console.log(modalCards)
+//
+            //    for (i = 0; i < modalCards.length; i++){
+            //        console.log(modalCards[i].getAttribute('value'));
+            //        value = modalCards[i].getAttribute('value');
+            //        console.log(value)
+            //        if (data['cards'].includes(value)){
+            //            document.getElementById('modalContent').querySelector('[value="' + value + '"]').hidden = false;
+            //            console.log('show!')
+            //        }
+            //        else{
+            //            document.getElementById('modalContent').querySelector('[value="' + value + '"]').hidden = true;
+            //        }
+            //        console.log(modalCards[i])
+            //    }
+            //    openSuggestModal();
+            //});
+            
+            //This is in case we want to make it so that the player can select any card
+            socket.on('modalcards', function(data){
+                openSuggestModal();
             });
 
         });
@@ -262,9 +379,9 @@
         /* Style for the Suggest Modal */
         .modal {
             display: none;
-            position: fixed;
+            position: absolute;
             top: 0;
-            left: 0;
+            right: 200;
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.5);
@@ -272,8 +389,9 @@
 
         .modal-content {
             position: absolute;
-            width: 15%;
-            left: 50%;
+            top: 80px;
+            width: 20%;
+            left: 62%;
             transform: translate(-50%, -50%);
             padding: 20px;
             background-color: #fff;
@@ -286,6 +404,13 @@
             right: 10px;
             font-size: 20px;
             cursor: pointer;
+        }
+
+        .locationBox {
+            border: 2px solid yellow;
+            width: 15px;  
+            height: 35px; 
+            position: absolute;
         }
 
         
@@ -303,7 +428,7 @@
             z-index: 1;  
         } */
 
-        #ballroom{
+        #Ballroom{
             top: 300px; /* Position from top */
             left: -1030px; /* Position from left */
             width: 98%; 
@@ -316,7 +441,7 @@
             background-repeat: no-repeat;
             background-image:url('static/Cards/Rooms/ballroom.png')
         }
-        #hall{
+        #Hall{
             top: 300px; /* Position from top */
             left: -955px; /* Position from left */
             width: 98%; 
@@ -325,7 +450,7 @@
             background-image:url('static/Cards/Rooms/hall.png')
         }
         
-        #conservatory{
+        #Conservatory{
             top: 300px; /* Position from top */
             left: -880px; /* Position from left */
             width: 98%; 
@@ -333,7 +458,7 @@
             background-repeat: no-repeat;
             background-image:url('static/Cards/Rooms/conservatory.png')
         }
-        #diningroom{
+        #Dining{
             top: 300px; /* Position from top */
             left: -805px; /* Position from left */
             width: 98%; 
@@ -341,7 +466,7 @@
             background-repeat: no-repeat;
             background-image:url('static/Cards/Rooms/dining_room.png')
         }
-        #billardroom{
+        #Billiard{
             top: 300px; /* Position from top */
             left: -730px; /* Position from left */
             width: 98%; 
@@ -351,7 +476,7 @@
         }
         
         
-        #kitchen{
+        #Kitchen{
             top: 300px; /* Position from top */
             left: -655px; /* Position from left */
             width: 98%; 
@@ -359,7 +484,7 @@
             background-repeat: no-repeat;
             background-image:url('static/Cards/Rooms/kitchen.png')
         }
-        #library{
+        #Library{
             top: 300px; /* Position from top */
             left: -580px; /* Position from left */
             width: 98%; 
@@ -367,7 +492,7 @@
             background-repeat: no-repeat;
             background-image:url('static/Cards/Rooms/library.png')
         }
-        #lounge{
+        #Lounge{
             top: 300px; /* Position from top */
             left: -505px; /* Position from left */
             width: 98%; 
@@ -375,7 +500,7 @@
             background-repeat: no-repeat;
             background-image:url('static/Cards/Rooms/lounge.png')
         }
-        #studyroom{
+        #Study{
             top: 300px; /* Position from top */
             left: -430px; /* Position from left */
             width: 98%; 
@@ -383,7 +508,7 @@
             background-repeat: no-repeat;
             background-image:url('static/Cards/Rooms/study.png')
         }
-        #hallway1{
+        #Hall1{
             top: 550px; /* Position from top */
             left: -1030px; /* Position from left */
             width: 98%; 
@@ -391,7 +516,7 @@
             background-repeat: no-repeat;
             background-image:url('static/Cards/Rooms/hallway1.png')
         }
-        #hallway2{
+        #Hall2{
             top: 550px; /* Position from top */
             left: -955px; /* Position from left */
             width: 98%; 
@@ -399,7 +524,7 @@
             background-repeat: no-repeat;
             background-image:url('static/Cards/Rooms/hallway2.png')
         }
-        #hallway3{
+        #Hall3{
             top: 550px; /* Position from top */
             left: -880px; /* Position from left */
             width: 98%; 
@@ -407,7 +532,7 @@
             background-repeat: no-repeat;
             background-image:url('static/Cards/Rooms/hallway3.png')
         }
-        #hallway4{
+        #Hall4{
             top: 550px; /* Position from top */
             left: -805px; /* Position from left */
             width: 98%; 
@@ -415,7 +540,7 @@
             background-repeat: no-repeat;
             background-image:url('static/Cards/Rooms/hallway4.png')
         }
-        #hallway5{
+        #Hall5{
             top: 550px; /* Position from top */
             left: -730px; /* Position from left */
             width: 98%; 
@@ -423,7 +548,7 @@
             background-repeat: no-repeat;
             background-image:url('static/Cards/Rooms/hallway5.png')
         }
-        #hallway6{
+        #Hall6{
             top: 550px; /* Position from top */
             left: -655px; /* Position from left */
             width: 98%; 
@@ -431,7 +556,7 @@
             background-repeat: no-repeat;
             background-image:url('static/Cards/Rooms/hallway6.png')
         }
-        #hallway7{
+        #Hall7{
             top: 550px; /* Position from top */
             left: -580px; /* Position from left */
             width: 98%; 
@@ -439,7 +564,7 @@
             background-repeat: no-repeat;
             background-image:url('static/Cards/Rooms/hallway7.png')
         }
-        #hallway8{
+        #Hall8{
             top: 550px; /* Position from top */
             left: -505px; /* Position from left */
             width: 98%; 
@@ -447,7 +572,7 @@
             background-repeat: no-repeat;
             background-image:url('static/Cards/Rooms/hallway8.png')
         }
-        #hallway9{
+        #Hall9{
             top: 550px; /* Position from top */
             left: -430px; /* Position from left */
             width: 98%; 
@@ -455,7 +580,7 @@
             background-repeat: no-repeat;
             background-image:url('static/Cards/Rooms/hallway9.png')
         }
-        #hallway10{
+        #Hall10{
             top: 550px; /* Position from top */
             left: -355px; /* Position from left */
             width: 98%; 
@@ -463,7 +588,7 @@
             background-repeat: no-repeat;
             background-image:url('static/Cards/Rooms/hallway10.png')
         }
-        #hallway11{
+        #Hall11{
             top: 550px; /* Position from top */
             left: -280px; /* Position from left */
             width: 98%; 
@@ -471,7 +596,7 @@
             background-repeat: no-repeat;
             background-image:url('static/Cards/Rooms/hallway11.png')
         }
-        #hallway12{
+        #Hall12{
             top: 550px; /* Position from top */
             left: -215px; /* Position from left */
             width: 98%; 
@@ -636,7 +761,7 @@
         <div id = "cardoutput">Card Type, Card Name</div>
     </div> -->
     <div class = "notebook">
-        <table id="notebook" style="empty-cells: show; width: 100%;">
+        <table id="notebook" style="empty-cells: show; width: 100%">
             <tr><th colspan="11">Suspects</th></tr>
             <tr><th colspan="11">&nbsp;</th></tr>
             <tr><th colspan="11">Weapons</th></tr>
@@ -647,7 +772,7 @@
 
     <div class = "movebutton">
         <!--This will have to be changed to selecting the location to move to-->
-        <button onclick = "showMoveList()" id="move-button" >Move</button>
+        <button id="move-button">Move</button>
     </div>
 
     <div class = "suggestbutton">
@@ -674,9 +799,9 @@
 
     <div id = "accuseRadio" class = "radio-list-accuse">
         <form>
-            <h3>Characters,rooms,Weapons </h3>
+            <h3>Character, Room, Weapon</h3>
             <label>
-                <div class="card" name="Character" id="profplum" value="Prof. Plum"></div>
+                <div class="card" name="Character" id="profplum" value="Prof. Plum" ></div>
                 <div class="card" name="Character" id="colmustard" value="Col. Mustard"></div>
                 <div class="card" name="Character" id="mrgreen" value="Mr. Green"></div>
                 <div class="card" name="Character" id="missscarlet" value="Miss Scarlet"></div>
@@ -684,15 +809,15 @@
                 <div class="card" name="Character" id="mrswhite" value="Mrs. White"></div>
             </label>
             <label>
-                <div class="card" name="Location" id="ballroom" value="Ballroom"></div>
-                <div class="card" name="Location" id="hall" value="Hall"></div>
-                <div class="card" name="Location" id="conservatory" value="conservatory"></div>
-                <div class="card" name="Location" id="diningroom" value="Dining"></div>
-                <div class="card" name="Location" id="billardroom" value="Billiard Room"></div>
-                <div class="card" name="Location" id="kitchen" value="Kitchen"></div>
-                <div class="card" name="Location" id="library" value="Library"></div>
-                <div class="card" name="Location" id="lounge" value="Lounge"></div>
-                <div class="card" name="Location" id="studyroom" value="Study"></div>   
+                <div class="card" name="Location" id="Ballroom" value="Ballroom"></div>
+                <div class="card" name="Location" id="Hall" value="Hall"></div>
+                <div class="card" name="Location" id="Conservatory" value="conservatory"></div>
+                <div class="card" name="Location" id="Dining" value="Dining"></div>
+                <div class="card" name="Location" id="Billiard" value="Billiard Room"></div>
+                <div class="card" name="Location" id="Kitchen" value="Kitchen"></div>
+                <div class="card" name="Location" id="Library" value="Library"></div>
+                <div class="card" name="Location" id="Lounge" value="Lounge"></div>
+                <div class="card" name="Location" id="Study" value="Study"></div>   
             </label>
                 <div class="card" name="Weapon" id="candle" value="Candlestick"></div>
                 <div class="card" name="Weapon" id="knife" value="Knife"></div>
@@ -714,27 +839,27 @@
             <h3>Location</h3>
                 
             <label>
-                <div class="card" name="Location" id="ballroom" value="Ballroom"></div>
-                <div class="card" name="Location" id="hall" value="Hall"></div>
-                <div class="card" name="Location" id="hallway1" value="Hall1"></div>
-                <div class="card" name="Location" id="hallway2" value="Hall2"></div>
-                <div class="card" name="Location" id="hallway3" value="Hall3"></div>
-                <div class="card" name="Location" id="hallway4" value="Hall4"></div>
-                <div class="card" name="Location" id="hallway5" value="Hall5"></div>
-                <div class="card" name="Location" id="hallway6" value="Hall6"></div>
-                <div class="card" name="Location" id="hallway7" value="Hall7"></div>
-                <div class="card" name="Location" id="hallway8" value="Hall8"></div>
-                <div class="card" name="Location" id="hallway9" value="Hall9"></div>
-                <div class="card" name="Location" id="hallway10" value="Hall10"></div>
-                <div class="card" name="Location" id="hallway11" value="Hall11"></div>
-                <div class="card" name="Location" id="hallway12" value="Hall12"></div>
-                <div class="card" name="Location" id="conservatory" value="Conservatory"></div>
-                <div class="card" name="Location" id="diningroom" value="Dining"></div>
-                <div class="card" name="Location" id="billardroom" value="Billiard"></div>
-                <div class="card" name="Location" id="kitchen" value="Kitchen"></div>
-                <div class="card" name="Location" id="library" value="Library"></div>
-                <div class="card" name="Location" id="lounge" value="Lounge"></div>
-                <div class="card" name="Location" id="studyroom" value="Study"></div>
+                <div class="card" name="Location" hidden = 'true' id="Ballroom" value="Ballroom"></div>
+                <div class="card" name="Location" hidden = 'true' id="Hall" value="Hall"></div>
+                <div class="card" name="Location" hidden = 'true' id="Hall1" value="Hall1"></div>
+                <div class="card" name="Location" hidden = 'true' id="Hall2" value="Hall2"></div>
+                <div class="card" name="Location" hidden = 'true' id="Hall3" value="Hall3"></div>
+                <div class="card" name="Location" hidden = 'true' id="Hall4" value="Hall4"></div>
+                <div class="card" name="Location" hidden = 'true' id="Hall5" value="Hall5"></div>
+                <div class="card" name="Location" hidden = 'true' id="Hall6" value="Hall6"></div>
+                <div class="card" name="Location" hidden = 'true' id="Hall7" value="Hall7"></div>
+                <div class="card" name="Location" hidden = 'true' id="Hall8" value="Hall8"></div>
+                <div class="card" name="Location" hidden = 'true' id="Hall9" value="Hall9"></div>
+                <div class="card" name="Location" hidden = 'true' id="Hall10" value="Hall10"></div>
+                <div class="card" name="Location" hidden = 'true' id="Hall11" value="Hall11"></div>
+                <div class="card" name="Location" hidden = 'true' id="Hall12" value="Hall12"></div>
+                <div class="card" name="Location" hidden = 'true' id="Conservatory" value="Conservatory"></div>
+                <div class="card" name="Location" hidden = 'true' id="Dining" value="Dining"></div>
+                <div class="card" name="Location" hidden = 'true' id="Billiard" value="Billiard"></div>
+                <div class="card" name="Location" hidden = 'true' id="Kitchen" value="Kitchen"></div>
+                <div class="card" name="Location" hidden = 'true' id="Library" value="Library"></div>
+                <div class="card" name="Location" hidden = 'true' id="Lounge" value="Lounge"></div>
+                <div class="card" name="Location" hidden = 'true' id="Study" value="Study"></div>
     
             </label>
             <input type = "submit" value = "Submit" id = "movesubmit">
@@ -742,7 +867,7 @@
     </div>
     <div id = "suggestRadio" class = "radio-list-suggest">
         <form>
-            <h3>Character,Room, Weapon</h3>
+            <h3>Character and Weapon</h3>
             <label>
                 
                 <div class="card" name="Character" id="profplum" value="Prof. Plum"></div>
@@ -768,11 +893,10 @@
     <div id="suggestModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeSuggestModal()">&times;</span>
-            <div id = "suggestRadio" class = "radio-list-suggest"></div><p>Can you disprove?</p>
-                <form>
-                    <h3>Character,Room, Weapon</h3>
+            <div id = "suggestModalList" class = "radio-list-suggest"></div><p>Can you disprove?</p>
+                <form id = "modalContent">
+                    <h3>Character, Room, and/or Weapon</h3>
                     <label>
-                        
                         <div class="card" name="Character" id="profplum" value="Prof. Plum"></div>
                         <div class="card" name="Character" id="colmustard" value="Col. Mustard"></div>
                         <div class="card" name="Character" id="mrgreen" value="Mr. Green"></div>
@@ -781,15 +905,15 @@
                         <div class="card" name="Character" id="mrswhite" value="Mrs. White"></div>
                     </label>
                     <label>
-                        <div class="card" name="Location" id="ballroom" value="Ballroom"></div>
-                        <div class="card" name="Location" id="hall" value="Hall"></div>
-                        <div class="card" name="Location" id="conservatory" value="Conservatory"></div>
-                        <div class="card" name="Location" id="diningroom" value="Dining"></div>
-                        <div class="card" name="Location" id="billardroom" value="Billiard"></div>
-                        <div class="card" name="Location" id="kitchen" value="kitchen"></div>
-                        <div class="card" name="Location" id="library" value="Library"></div>
-                        <div class="card" name="Location" id="lounge" value="Lounge"></div>
-                        <div class="card" name="Location" id="studyroom" value="Study"></div>   
+                        <div class="card" name="Location" id="Ballroom" value="Ballroom"></div>
+                        <div class="card" name="Location" id="Hall" value="Hall"></div>
+                        <div class="card" name="Location" id="Conservatory" value="Conservatory"></div>
+                        <div class="card" name="Location" id="Dining" value="Dining"></div>
+                        <div class="card" name="Location" id="Billiard" value="Billiard"></div>
+                        <div class="card" name="Location" id="Kitchen" value="kitchen"></div>
+                        <div class="card" name="Location" id="Library" value="Library"></div>
+                        <div class="card" name="Location" id="Lounge" value="Lounge"></div>
+                        <div class="card" name="Location" id="Study" value="Study"></div>   
                     </label>
                         <div class="card" name="Weapon" id="candle" value="Candlestick"></div>
                         <div class="card" name="Weapon" id="knife" value="Knife"></div>
@@ -915,7 +1039,7 @@
         } 
 
         var locations = {
-            study: {top:235 , left: 225},
+            Study: {top:235 , left: 225},
             Hall1: {top:215, left: 350},
             Hall: {top:215, left: 470},
             Hall2: {top:215, left: 610},
@@ -962,6 +1086,7 @@
                 cell.innerHTML = artifacts[i][j];
                 cell.style.textAlign = "left";
                 cell.style.class = "bold";
+                cell.style.height = '22px';
         
                 cell.onclick = function() {
                                     if (this.style.fontWeight == "bold") {

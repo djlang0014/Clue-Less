@@ -54,6 +54,18 @@ cardLocationList = [
     Card("Location", "Ballroom"),
     Card("Location", "Kitchen"),
 ]
+
+suggestionLocations = [
+    "Study",
+    "Hall",
+    "Lounge",
+    "Library",
+    "Billiard",
+    "Dining",
+    "Conservatory",
+    "Ballroom",
+    "Kitchen",
+]
     
 
 locationList = [
@@ -387,6 +399,24 @@ def movecharacter(data):
             setPlayerLocation(roomCode, player.sid, newLocation)
             socketio.emit('movecharacter', {'character': character, 'location': newLocation})
 
+@socketio.on('get_available_locations')
+def get_available_locations(data):
+    roomCode = session['roomCode']
+    character = data['character']
+    player = gameRooms[roomCode].playersDict[session['username']]
+    gameInstance = gameRooms[roomCode]
+
+    currentLocation = getPlayerCurrentLocation(player.sid, roomCode)
+
+    available_locations = gameInstance.findAvailableLocations(player.sid, currentLocation)
+
+    for location in available_locations:
+        if checkIfHallwayAndOccupied(roomCode, location) == True:
+            available_locations.remove(location)
+        
+    socketio.emit("available_locations", {'locations': available_locations}, to=player.sid)
+  
+
 @socketio.on('accusation')
 def accusation(data):
     accuseWeapon = data['weapon']
@@ -415,9 +445,20 @@ def accusation(data):
 def suggestion(data):
     suggestWeapon = data['weapon']
     suggestSuspect = data['suspect']
+    username = session['username']
     roomCode = session['roomCode']
 
-    player = gameRooms[roomCode].playersDict[session['username']]
+    # player = gameRooms[roomCode].playersDict[session['username']]
+    
+    player = gameRooms[roomCode].playersDict[username]
+    print(player)
+    print(username, gameRooms[roomCode])
+    suggestRoom = gameRooms[roomCode].getPlayerLocation(player.sid)
+    
+    if suggestRoom not in suggestionLocations:
+        socketio.emit('message_from_server', {'text': player.name + ' cannot make a suggestion from there.'}, to=roomCode)
+        return
+    
     name = player.name
     
     suggestRoom = getPlayerCurrentLocation(player.sid, roomCode)
@@ -427,12 +468,50 @@ def suggestion(data):
     socketio.emit('message_from_server', {'text': name + ' suggested: ' + suggestionString}, to=roomCode)
     socketio.emit('showsuggestmodal', {'player': name}, to=roomCode)
 
+@socketio.on('getcards')
+def getcards(data):
+    roomCode = session['roomCode']
+    username = session['username']
+    player = gameRooms[roomCode].playersDict[username]
+    playerCards = player.getPlayerCards()
+    playerCardNames = []
+
+    for card in playerCards:
+        playerCardNames.append(card.cardName)
+    print("here")
+    socketio.emit("modalcards", {'cards': playerCardNames}, to=player.sid)
+
 @socketio.on('suggestionreply')
 def suggestionreply(data):
     roomCode = session['roomCode']
     player = gameRooms[roomCode].playersDict[session['username']]
     name = player.name
-    card = data['card']
+    weapon = data['weapon']
+    character = data['suspect']
+    room = data['room']
+    #TODO: Need to get the SID of the suggesting player!
+    #This is not the most graceful way to display this as it does not account for any other combinations
+    returnString = name + " showed: "
+
+    if weapon != None:
+        returnString += weapon
+
+        if character != None:
+            returnString += " + "
+
+    if character != None:
+        returnString += character
+
+        if room != None:
+            returnString += " + "
+
+    if room != None:
+        returnString += room + "."
+
+    if returnString == name + "showed: .":
+        returnString = name + "showed nothing."
+
+    socketio.emit('message_from_server', {'text': returnString}, to=roomCode)
 
     #TODO: Need to get the SID of the suggesting player!
     # the next lines are a test 
