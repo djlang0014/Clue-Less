@@ -36,6 +36,7 @@ class GameInstance:
         #(used for Flask SocketIO rooms)
         self.gameID = gameID
         self.players = players
+        self.turnIndex = 0
         self.playersDict = {} #Key: username, Value: Player Object
         for player in self.players:
             self.playersDict[player.getPlayerName()] = player
