@@ -396,6 +396,24 @@ def movecharacter(data):
             setPlayerLocation(roomCode, player.sid, newLocation)
             socketio.emit('movecharacter', {'character': character, 'location': newLocation})
 
+@socketio.on('get_available_locations')
+def get_available_locations(data):
+    roomCode = session['roomCode']
+    character = data['character']
+    player = gameRooms[roomCode].playersDict[session['username']]
+    gameInstance = gameRooms[roomCode]
+
+    currentLocation = getPlayerCurrentLocation(player.sid, roomCode)
+
+    available_locations = gameInstance.findAvailableLocations(player.sid, currentLocation)
+    
+    for location in available_locations:
+        if checkIfHallwayAndOccupied(roomCode, location) == True:
+            available_locations.remove(location)
+        
+    socketio.emit("available_locations", {'locations': available_locations}, to=player.sid)
+  
+
 @socketio.on('accusation')
 def accusation(data):
     accuseWeapon = data['weapon']
