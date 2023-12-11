@@ -119,6 +119,9 @@
                 if (weapon && character && location) {
                     // Emit the suggestion event to the server with the selected values
                     socket.emit('accusation', {'weapon': weapon, 'suspect': character, 'room': location});
+
+                    // Player should only accuse once
+                    document.getElementById("accuse-button").disabled = true;
                 } 
                 deselectAllCards();
             }
@@ -139,6 +142,7 @@
                     socket.emit('suggestion', {'weapon': weapon, 'suspect': character});
                 } 
                 deselectAllCards();
+                closeSuggestModal();
             }
 
             document.getElementById("modalsubmit").onclick = function(){
@@ -161,6 +165,9 @@
                 socket.emit('suggestionreply', {'weapon': weapon, 'suspect': character, 'room': location});
                 deselectAllCards();
                 closeSuggestModal();
+                
+                // Player should only suggest once - disable button afterwards
+                document.getElementById("suggest-button").disabled = true
             }
 
             document.getElementById("end-turn-button").onclick = function() {
@@ -206,8 +213,6 @@
                 }  
                               
             });
-
-            
 
             socket.on('playerinfo', function(data) {
                 console.log(data);
