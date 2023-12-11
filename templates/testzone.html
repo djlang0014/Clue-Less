@@ -203,12 +203,13 @@
                               
             });
 
-            // socket.on('playerinfo', function(data) {
-            //     console.log(data);
-            //     playername = data['playername'];
-            //     playercharacter = data['character'];
-            //     document.getElementById('playerinfooutput').innerText = "Player Name: " + playername + "\nPlayer Character: " + playercharacter;
-            // });
+            socket.on('playerinfo', function(data) {
+                // console.log(data);
+                playername = data['playername'];
+                playercharacter = data['character'];
+                document.getElementById('user-name').innerText = playername;
+                document.getElementById('player-character').innerText = playercharacter;
+            });
 
             // socket.on('playercard', function(data){
             //     if (x == 1){
@@ -322,6 +323,7 @@
             left: 52.5vw;
             width: 15vw;
             height: 15vh;
+            padding: 20px;
             display: none;
             grid-template-columns: 15vw 15vw 15vw;
             grid-template-rows: 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh;
@@ -334,6 +336,7 @@
             height: 15vh;
             left: 52.5vw;
             width: 15vw;
+            padding: 20px;
             display: none;
             grid-template-columns: 15vw 15vw;
             grid-template-rows: 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh;
@@ -344,15 +347,16 @@
             width: 15vw;
             height: 15vh;
             display: none;
+            padding: 20px;
             grid-template-columns: 15vw 15vw;
             grid-template-rows: 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh;
 
         }
         .endTurnContainer{
-            position: fixed;
+            position: relative;
             left:52.5vw;
-            width:30vw;
-            height: 90vh;
+            width:15vw;
+            height: 15vh;
             display: none;
         }
         .output {
@@ -753,11 +757,11 @@
                 <table style="width:100%; border:none;">
                     <tr style="border:none">
                         <td style="width:50%; text-align:right; border:none;">Username:</td>
-                        <td id="user-name" style="border:none"></td>
+                        <td id="user-name" style="border:none; text-align:left;"></td>
                     </tr>
                     <tr>
                         <td style="width:50%; text-align:right; border:none;">Character:</td>
-                        <td id="player-character" style="border:none"></td>
+                        <td id="player-character" style="border:none; text-align:left;"></td>
                     </tr>
                 </table>
             </div>
@@ -773,19 +777,19 @@
 
     <div class = "movebutton">
         <!--This will have to be changed to selecting the location to move to-->
-        <button id="move-button">Move</button>
+        <button id="move-button" disabled>Move</button>
     </div>
 
     <div class = "suggestbutton">
-        <button onclick = "showSuggestList()" id="suggest-button" >Suggest</button>
+        <button onclick = "showSuggestList()" id="suggest-button" disabled>Suggest</button>
     </div>
 
     <div class = "accusebutton">
-        <button onclick = "showAccuseList()" id="accuse-button" >Accuse</button>
+        <button onclick = "showAccuseList()" id="accuse-button" disabled>Accuse</button>
     </div>
 
     <div class = "endbutton">
-        <button onclick = "showEndTurn()" id="end-button" >End Turn</button>
+        <button onclick = "showEndTurn()" id="end-button" disabled>End Turn</button>
     </div>
 
     <div class = "serverchat" id="serverchat">
