@@ -30,6 +30,7 @@ class Player:
         self.character = None
         self.cards = [] #Cards will be set in driver code
         self.maySuggest = True
+        self.suggesting = False
         self.mayEndTurn = False
 
     #This will be overloaded 
