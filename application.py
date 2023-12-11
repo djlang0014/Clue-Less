@@ -486,39 +486,32 @@ def suggestionreply(data):
     roomCode = session['roomCode']
     player = gameRooms[roomCode].playersDict[session['username']]
     name = player.name
-    weapon = data['weapon']
-    character = data['suspect']
-    room = data['room']
+    card = data['weapon']
+
+    if card == None:
+        card = data['suspect']
+    
+    if card == None:
+        card = data['room']
+
+    
+
     #TODO: Need to get the SID of the suggesting player!
     #This is not the most graceful way to display this as it does not account for any other combinations
-    returnString = name + " showed: "
+    returnString = name + " showed: " + card
 
-    if weapon != None:
-        returnString += weapon
+    if card == None:
+        returnString = name + " had no cards to show."
 
-        if character != None:
-            returnString += " + "
-
-    if character != None:
-        returnString += character
-
-        if room != None:
-            returnString += " + "
-
-    if room != None:
-        returnString += room + "."
-
-    if returnString == name + "showed: .":
-        returnString = name + "showed nothing."
 
     socketio.emit('message_from_server', {'text': returnString}, to=roomCode)
 
     #TODO: Need to get the SID of the suggesting player!
     # the next lines are a test 
-    previous_player_index = gameRooms[roomCode].turnIndex
-    if (previous_player_index != 0):
-        --previous_player_index
-    socketio.emit('message_from_server', {'text': name + ' showed ' + card + '!'}, to=gameRooms[roomCode].players[previous_player_index].sid)
+    #previous_player_index = gameRooms[roomCode].turnIndex
+    #if (previous_player_index != 0):
+    #    --previous_player_index
+    #socketio.emit('message_from_server', {'text': name + ' showed ' + card + '!'}, to=gameRooms[roomCode].players[previous_player_index].sid)
 
 # notifies all players besides current player
 @socketio.on('notify_other_players')

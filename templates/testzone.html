@@ -157,17 +157,13 @@
                 console.log(location)
                 
                 // TODO: player should only select one card to disprove with
-                if (weapon && character && location) {
-                    // Emit the suggestion event to the server with the selected values
-                    socket.emit('suggestion', {'weapon': weapon, 'suspect': character, 'room': location});
-                } 
                 console.log('here')
                 socket.emit('suggestionreply', {'weapon': weapon, 'suspect': character, 'room': location});
                 deselectAllCards();
                 closeSuggestModal();
                 
                 // Player should only suggest once - disable button afterwards
-                document.getElementById("suggest-button").disabled = true
+                //document.getElementById("suggest-button").disabled = true
             }
 
             document.getElementById("end-turn-button").onclick = function() {
