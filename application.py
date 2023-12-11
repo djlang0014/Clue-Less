@@ -327,6 +327,7 @@ def select_character(data):
     roomCode = session['roomCode']
     player = gameRooms[roomCode].playersDict[username]
     player.selectCharacter(character)
+    characterPlayerDict[character] = player
     roomCode = data['roomCode']
     print(player.character)
     socketio.emit("disable_character", {'character': data['character']}, to=roomCode)
@@ -459,6 +460,9 @@ def suggestion(data):
         socketio.emit('message_from_server', {'text': player.name + ' cannot make a suggestion from there.'}, to=roomCode)
         return
     
+    if suggestSuspect in characterPlayerDict:
+        socketio.emit('move_for_suggestion', {'character': suggestSuspect, 'location': suggestRoom, 'username': username}, to=roomCode)
+    
     name = player.name
     
     suggestRoom = getPlayerCurrentLocation(player.sid, roomCode)
@@ -466,7 +470,7 @@ def suggestion(data):
     suggestionString = "" + suggestWeapon + ", " + suggestSuspect + ", " + suggestRoom + "."
 
     socketio.emit('message_from_server', {'text': name + ' suggested: ' + suggestionString}, to=roomCode)
-    socketio.emit('showsuggestmodal', {'player': name}, to=roomCode)
+    socketio.emit('showsuggestmodal', {'player': name, 'suggestWeapon': suggestWeapon, 'suggestSuspect': suggestSuspect, 'suggestRoom': suggestRoom}, to=roomCode)
 
 @socketio.on('getcards')
 def getcards(data):
@@ -485,7 +489,13 @@ def getcards(data):
 def suggestionreply(data):
     roomCode = session['roomCode']
     player = gameRooms[roomCode].playersDict[session['username']]
+    suggestingPlayer = data['suggestingPlayerName']
+    suggestingPlayer = gameRooms[roomCode].playersDict[session[suggestingPlayer]]
+    instance = gameRooms[roomCode]
+    suggestingPlayerIndex = instance.players.index(suggestingPlayer)
+    
     name = player.name
+
     card = data['weapon']
 
     if card == None:
@@ -495,7 +505,6 @@ def suggestionreply(data):
         card = data['room']
 
     
-
     #TODO: Need to get the SID of the suggesting player!
     #This is not the most graceful way to display this as it does not account for any other combinations
     returnString = name + " showed: " + card
@@ -512,6 +521,7 @@ def suggestionreply(data):
     #if (previous_player_index != 0):
     #    --previous_player_index
     #socketio.emit('message_from_server', {'text': name + ' showed ' + card + '!'}, to=gameRooms[roomCode].players[previous_player_index].sid)
+    #probably add a closemodal() or something to close all modals that are still open
 
 # notifies all players besides current player
 @socketio.on('notify_other_players')
