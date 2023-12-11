@@ -134,15 +134,12 @@
 
                 var weapon = selectedWeapon ? selectedWeapon.getAttribute('value') : null;
                 var character = selectedCharacter ? selectedCharacter.getAttribute('value') : null;
- 
 
-                // Check if all necessary selections have been made
-                if (weapon && character) {
-                    // Emit the suggestion event to the server with the selected values
-                    socket.emit('suggestion', {'weapon': weapon, 'suspect': character});
-                } 
                 deselectAllCards();
                 closeSuggestModal();
+                
+                // Emit the suggestion event to the server with the selected values
+                socket.emit('suggestion', {'weapon': weapon, 'suspect': character});
             }
 
             document.getElementById("modalsubmit").onclick = function(){
@@ -256,6 +253,17 @@
                 document.getElementById("end-button").disabled = false;
             });
 
+            socket.on('disable_player_action', function(data) {
+                var text = data['text']
+                // match passed in info to the button to be disabled
+                // (move, suggest, accuse) 
+                // This is to be used during a player's turn
+
+                 // TODO: include other options like move or accuse
+                 document.getElementById("suggest-button").disabled = true
+                 // document.getElementById(text).disabled = true <- test if that works
+                
+            });
             socket.on('turn_notification', function(data) {
                 var text = data['text'];
                 document.getElementById("chat").innerHTML += "Server: " + text + "<br />";   
@@ -304,7 +312,7 @@
             //    var modalCards = document.getElementById('modalContent').querySelectorAll('.card');
             //    console.log(data['cards'])
             //    console.log(modalCards)
-//
+            //
             //    for (i = 0; i < modalCards.length; i++){
             //        console.log(modalCards[i].getAttribute('value'));
             //        value = modalCards[i].getAttribute('value');

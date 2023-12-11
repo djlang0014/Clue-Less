@@ -340,18 +340,35 @@ def end_turn():
     gameInstance = gameRooms[roomCode]
     player = gameInstance.playersDict[username]
 
-    i = gameRooms[roomCode].turnIndex
-    next_player_index = (i + 1) % len(gameInstance.players)
+    # checks if the game is in its suggestion phase, if so move to that index
+    if (gameInstance.suggestionPhase) :
+        i = gameInstance.suggestionTurnIndex
+        next_player_index = (i + 1) % len(gameInstance.players)
+        nextPlayer = gameInstance.players[next_player_index]
 
-    socketio.emit("your_turn", {'text':"It is your turn!"}, to=gameInstance.players[next_player_index].sid)
+        # If it gets back to the suggesting player, then that means no one was able to disprove.
+        if (nextPlayer.suggesting == True):
+            socketio.emit('message_from_server', {'text' : 'No one was able to disprove!'}, to=gameRooms[roomCode])
+            # TODO: Toggle off suggestion button?
 
-    gameRooms[roomCode].turnIndex = next_player_index
+            nextPlayer.suggesting = False
+            return
+        else :
+            socketio.emit("message_from_server", {'text':"It is your turn to disprove!"}, to=nextPlayer.sid)
+            socketio.emit('showsuggestmodal', {'player': gameInstance.players[next_player_index].name}, to=nextPlayer.sid)
+            gameInstance.suggestionTurnIndex = next_player_index
+            return
+            
+    else:
+        # Process regular turn index
+        i = gameInstance.turnIndex
+        next_player_index = (i + 1) % len(gameInstance.players)
 
-    socketio.emit("notify_other_players", {'text': gameInstance.players[next_player_index].name+"'s turn!", 'currPlayerSid': player.sid})
+        socketio.emit("your_turn", {'text':"It is your turn!"}, to=gameInstance.players[next_player_index].sid)
+        gameInstance.turnIndex = next_player_index
 
-    for player in gameRooms[roomCode].players:
-        if (player.sid != gameInstance.players[next_player_index].sid):
-            socketio.emit("turn_notification", {'text':"It is " + gameInstance.players[next_player_index].name + "'s turn!"}, to=player.sid)
+        socketio.emit("notify_other_players", {'text': gameInstance.players[next_player_index].name+"'s turn!", 'currPlayerSid': player.sid})
+
     
 
 @application.route('/testzone')
@@ -395,9 +412,11 @@ def movecharacter(data):
         if (is_occupied_hallway == True):
             socketio.emit('message_from_server', {'text': character + ' cannot move there.'}, to=gameRooms[roomCode].players[gameRooms[roomCode].turnIndex].sid)
         else:
+            # update location in object and database, then move character and send a message to all players
             gameInstance.setPlayerLocation(player.sid, newLocation)
             setPlayerLocation(roomCode, player.sid, newLocation)
             socketio.emit('movecharacter', {'character': character, 'location': newLocation})
+            socketio.emit('message_from_server', {'text' : player.name + ' has moved to ' + newLocation + '.'}, to=roomCode)
 
 @socketio.on('get_available_locations')
 def get_available_locations(data):
@@ -437,7 +456,8 @@ def accusation(data):
         socketio.emit('end_game', {'text': player.sid})
         setEndGameSessionDetails(roomCode, player.sid)
     else:
-        # TODO: player can't make another accusation again but can still stay in the game - set their canAccuse property to false
+        # TODO: player can't make any other moves again but can still stay in the game to disprove suggestions
+        #            - update properties instead of removing from gameInstance
         gameInstance.players.remove(player)
         socketio.emit('message_from_server', {'text': name + ' was incorrect. They guessed: ' + delim.join(accusationCards)}, to=roomCode)
     
@@ -448,25 +468,43 @@ def suggestion(data):
     username = session['username']
     roomCode = session['roomCode']
 
-    # player = gameRooms[roomCode].playersDict[session['username']]
-    
-    player = gameRooms[roomCode].playersDict[username]
-    print(player)
+    currPlayer = gameRooms[roomCode].playersDict[username]
+    currPlayer.suggesting = True
+
+    print(currPlayer)
     print(username, gameRooms[roomCode])
-    suggestRoom = gameRooms[roomCode].getPlayerLocation(player.sid)
+
+    gameInstance = gameRooms[roomCode]
+    gameInstance.suggestionPhase = True
+
+    suggestRoom = gameInstance.getPlayerLocation(currPlayer.sid)
     
     if suggestRoom not in suggestionLocations:
-        socketio.emit('message_from_server', {'text': player.name + ' cannot make a suggestion from there.'}, to=roomCode)
+        socketio.emit('message_from_server', {'text': 'You cannot make a suggestion from there.'}, to=currPlayer.sid)
         return
     
-    name = player.name
+    name = currPlayer.name
     
-    suggestRoom = getPlayerCurrentLocation(player.sid, roomCode)
+    suggestRoom = getPlayerCurrentLocation(currPlayer.sid, roomCode)
 
     suggestionString = "" + suggestWeapon + ", " + suggestSuspect + ", " + suggestRoom + "."
 
     socketio.emit('message_from_server', {'text': name + ' suggested: ' + suggestionString}, to=roomCode)
     socketio.emit('showsuggestmodal', {'player': name}, to=roomCode)
+    
+    # update index for suggestion turns 
+    next_player_index = (gameInstance.turnIndex + 1) % len(gameInstance.players)
+
+    nextPlayer = gameInstance.players[next_player_index]
+
+    if (nextPlayer.suggesting == False):
+        socketio.emit("message_from_server", {'text':"It is your turn to disprove!"}, to=nextPlayer.sid)
+        socketio.emit('showsuggestmodal', {'player': gameInstance.players[next_player_index].name}, to=nextPlayer.sid)
+    
+    # time.sleep(1)
+
+
+
 
 @socketio.on('getcards')
 def getcards(data):
@@ -488,6 +526,8 @@ def suggestionreply(data):
     name = player.name
     card = data['weapon']
 
+    disproved = False
+    
     if card == None:
         card = data['suspect']
     
@@ -512,6 +552,21 @@ def suggestionreply(data):
     #if (previous_player_index != 0):
     #    --previous_player_index
     #socketio.emit('message_from_server', {'text': name + ' showed ' + card + '!'}, to=gameRooms[roomCode].players[previous_player_index].sid)
+    
+    previous_player_index = gameRooms[roomCode].turnIndex
+    if (previous_player_index != 0):
+        --previous_player_index
+    
+    if (disproved):
+        # message only to the suggesting player
+        socketio.emit('message_from_server', {'text': returnString}, to=gameRooms[roomCode].players[previous_player_index].sid)
+
+        # notify all other players (without showing the card itself)
+        socketio.emit('message_from_server', {'text': name + ' showed ' + '!'}, to=gameRooms[roomCode].players[previous_player_index].sid)
+    else:
+        # TODO: functionality to move to the next player if they couldnt disprove!
+        socketio.emit('message_from_server', {'text': name + ' could not disprove!'}, to=gameRooms[roomCode])
+        socketio.emit('end_turn')
 
 # notifies all players besides current player
 @socketio.on('notify_other_players')
@@ -569,7 +624,6 @@ def setGameSessionDetails(roomCode,caseFile):
         now = datetime.datetime.now()
         curr_time = now.strftime('%Y-%m-%d %H:%M:%S')
         
-        # placeholder for now - will hold case file indices (or IDs?)
         caseFileCards = [ 
             caseFile.room.cardName,
             caseFile.suspect.cardName, 
@@ -590,14 +644,13 @@ def setGameSessionDetails(roomCode,caseFile):
         socketio.emit("message_from_server", {'text': 'Success'})
         
 def setEndGameSessionDetails(roomCode, playerID):
-    # Updates the game session's active status and adds the end time and which player won the game (if any)
+    # Updates the game session's active status and adds the end time and which player won the game
     with conn.cursor() as cur:
         now = datetime.datetime.now()
         curr_time = now.strftime('%Y-%m-%d %H:%M:%S')
 
         query = "UPDATE game_session SET is_active = %s, end_time = %s, player_won = %s WHERE session_id = %s;"
 
-        # player_won value is set to be "None" (for now)
         values = ('f', curr_time, playerID, roomCode)
 
         try:
