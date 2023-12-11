@@ -54,6 +54,18 @@ cardLocationList = [
     Card("Location", "Ballroom"),
     Card("Location", "Kitchen"),
 ]
+
+suggestionLocations = [
+    "Study",
+    "Hall",
+    "Lounge",
+    "Library",
+    "Billiard",
+    "Dining",
+    "Conservatory",
+    "Ballroom",
+    "Kitchen",
+]
     
 
 locationList = [
@@ -242,14 +254,11 @@ def on_game_start(data):
             if i >= len(cards):
                 break
     
+    # post game session information to database
+    setGameSessionDetails(roomCode, caseFile)
+
     socketio.emit("start_game_all", {'url': url_for('testzone')}, to=roomCode)
     time.sleep(1)
-
-    # post game session information to database
-    setGameSessionDetails(roomCode)
-    
-    # post player information to the database
-    setPlayerInfo(roomCode)
 
     # Use this function when the game has ended (will move)
     # setEndGameSessionDetails(roomCode)
@@ -277,23 +286,28 @@ def init_game():
     socketio.emit("playerinfo", {'playername': player.getPlayerName(), 'character': player.getPlayerCharacter()}, to=request.sid)
     playerCards = player.getPlayerCards()
 
+    # post player information to the database
+    setPlayerInfo(player, roomCode)
+
     for card in playerCards:
         socketio.emit("playercard", {'cardtype': card.cardType, 'cardname': card.cardName}, to=request.sid)
-    
-    for player in gameInstance.players:
-        match player.getPlayerCharacter():
-            case "Miss Scarlet":
-                gameInstance.setPlayerStartLocation(player.name, 'ScarletStart')
-            case "Col. Mustard":
-                gameInstance.setPlayerStartLocation(player.name, 'MustardStart')
-            case "Mrs. White":
-                gameInstance.setPlayerStartLocation(player.name, 'WhiteStart')
-            case "Mr. Green":
-                gameInstance.setPlayerStartLocation(player.name, 'GreenStart')
-            case "Mrs. Peacock":
-                gameInstance.setPlayerStartLocation(player.name, 'PeacockStart')
-            case "Prof. Plum":
-                gameInstance.setPlayerStartLocation(player.name, 'PlumStart')
+
+    match player.getPlayerCharacter():
+        case "Miss Scarlet":
+            startLocation = 'ScarletStart'
+        case "Col. Mustard":
+            startLocation = 'MustardStart'
+        case "Mrs. White":
+            startLocation = 'WhiteStart'
+        case "Mr. Green":
+            startLocation = 'GreenStart'
+        case "Mrs. Peacock":
+            startLocation = 'PeacockStart'
+        case "Prof. Plum":
+            startLocation = 'PlumStart'
+
+    gameInstance.setPlayerStartLocation(player.sid, startLocation)
+    setPlayerLocation(roomCode, player.sid, startLocation)
 
     
 @socketio.on('backdoor')
@@ -303,44 +317,6 @@ def backdoor(data):
     caseSuspect = gameRooms[roomCode].caseFile.suspect
     caseRoom = gameRooms[roomCode].caseFile.room
     socketio.emit('message_from_server', {'text': caseWeapon.cardName + ", " + caseSuspect.cardName + ", " + caseRoom.cardName})
-
-
-@socketio.on('request_player_info')
-def request_player_info(data):
-    gameInstance = gameRooms[session['roomCode']]
-    caseFile = gameInstance.caseFile
-    #socketio.emit("casefilebackdoor", {'location': caseFile.room.cardName, 'suspect': caseFile.suspect.cardName, 'weapon': caseFile.weapon.cardName}, to=request.sid)
-    user_id = session['user_id']
-    username = session['username']
-    roomCode = session['roomCode']
-    player = gameRooms[roomCode].playersDict[username]
-    print(player.getPlayerCharacter())
-    socketio.emit("playerinfo", {'playername': player.getPlayerName(), 'character': player.getPlayerCharacter()}, to=request.sid)
-    playerCards = player.getPlayerCards()
-
-    for card in playerCards:
-        socketio.emit("playercard", {'cardtype': card.cardType, 'cardname': card.cardName}, to=request.sid)
-    
-    startLocation = ''
-
-    for player in gameInstance.players:
-        match player.getPlayerCharacter():
-            case "Miss Scarlet":
-                startLocation = 'ScarletStart'
-            case "Col. Mustard":
-                startLocation = 'MustardStart'
-            case "Mrs. White":
-                startLocation = 'WhiteStart'
-            case "Mr. Green":
-                startLocation = 'GreenStart'
-            case "Mrs. Peacock":
-                startLocation = 'PeacockStart'
-            case "Prof. Plum":
-                startLocation = 'PlumStart'
-        
-        gameInstance.setPlayerStartLocation(player.sid, startLocation)
-        setPlayerLocation(roomCode, player.sid, startLocation)
-
     
 @socketio.on('select_character')
 def select_character(data):
@@ -432,6 +408,24 @@ def movecharacter(data):
             setPlayerLocation(roomCode, player.sid, newLocation)
             socketio.emit('movecharacter', {'character': character, 'location': newLocation})
 
+@socketio.on('get_available_locations')
+def get_available_locations(data):
+    roomCode = session['roomCode']
+    character = data['character']
+    player = gameRooms[roomCode].playersDict[session['username']]
+    gameInstance = gameRooms[roomCode]
+
+    currentLocation = getPlayerCurrentLocation(player.sid, roomCode)
+
+    available_locations = gameInstance.findAvailableLocations(player.sid, currentLocation)
+
+    for location in available_locations:
+        if checkIfHallwayAndOccupied(roomCode, location) == True:
+            available_locations.remove(location)
+        
+    socketio.emit("available_locations", {'locations': available_locations}, to=player.sid)
+  
+
 @socketio.on('accusation')
 def accusation(data):
     accuseWeapon = data['weapon']
@@ -442,33 +436,51 @@ def accusation(data):
     player = gameInstance.playersDict[session['username']]
     name = player.name
 
+    sessionCaseFile = getCaseFile(roomCode)
+    accusationCards = [accuseRoom, accuseSuspect, accuseWeapon]
 
-    caseWeapon = gameInstance.caseFile.weapon
-    caseSuspect = gameInstance.caseFile.suspect
-    caseRoom = gameInstance.caseFile.room
+    delim = ", "
 
-    accusationString = "" + accuseWeapon + ", " + accuseSuspect + ", " + accuseRoom + "."
-
-    if accuseWeapon == caseWeapon and accuseSuspect == caseSuspect and accuseRoom == caseRoom:
+    if all(card in sessionCaseFile for card in accusationCards): 
         socketio.emit('message_from_server', {'text': name + ' wins!'}, to=roomCode)
     else:
         gameInstance.players.remove(player)
-        socketio.emit('message_from_server', {'text': name + ' was incorrect. They guessed: ' + accusationString}, to=roomCode)
+        socketio.emit('message_from_server', {'text': name + ' was incorrect. They guessed: ' + delim.join(accusationCards)}, to=roomCode)
     
 @socketio.on('suggestion')
 def suggestion(data):
     suggestWeapon = data['weapon']
     suggestSuspect = data['suspect']
+    username = session['username']
     roomCode = session['roomCode']
-    suggestRoom = gameRooms[roomCode].getPlayerLocation(session['username'])
+    player = gameRooms[roomCode].playersDict[username]
+    print(player)
+    print(username, gameRooms[roomCode])
+    suggestRoom = gameRooms[roomCode].getPlayerLocation(player.sid)
     
-    player = gameRooms[roomCode].playersDict[session['username']]
+    if suggestRoom not in suggestionLocations:
+        socketio.emit('message_from_server', {'text': player.name + ' cannot make a suggestion from there.'}, to=roomCode)
+        return
+    
     name = player.name
 
     suggestionString = "" + suggestWeapon + ", " + suggestSuspect + ", " + suggestRoom + "."
 
     socketio.emit('message_from_server', {'text': name + ' suggested: ' + suggestionString}, to=roomCode)
     socketio.emit('showsuggestmodal', {'player': name}, to=roomCode)
+
+@socketio.on('getcards')
+def getcards(data):
+    roomCode = session['roomCode']
+    username = session['username']
+    player = gameRooms[roomCode].playersDict[username]
+    playerCards = player.getPlayerCards()
+    playerCardNames = []
+
+    for card in playerCards:
+        playerCardNames.append(card.cardName)
+    print("here")
+    socketio.emit("modalcards", {'cards': playerCardNames}, to=player.sid)
 
 @socketio.on('suggestionreply')
 def suggestionreply(data):
@@ -479,7 +491,28 @@ def suggestionreply(data):
     character = data['suspect']
     room = data['room']
     #TODO: Need to get the SID of the suggesting player!
-    socketio.emit('message_from_server', {'text': name + ' showed ' + character + ' + ' + weapon + ' + ' + room + '.'}, to=roomCode)
+    #This is not the most graceful way to display this as it does not account for any other combinations
+    returnString = name + " showed: "
+
+    if weapon != None:
+        returnString += weapon
+
+        if character != None:
+            returnString += " + "
+
+    if character != None:
+        returnString += character
+
+        if room != None:
+            returnString += " + "
+
+    if room != None:
+        returnString += room + "."
+
+    if returnString == name + "showed: .":
+        returnString = name + "showed nothing."
+
+    socketio.emit('message_from_server', {'text': returnString}, to=roomCode)
 
 def accusation(accString):
     numstring = accString.split(',')
@@ -533,27 +566,38 @@ def getPlayerCurrentLocation(player_id, roomCode):
                 print("Error: ", error)
             
             return curr_location
+        
+#Returns an array of card names which will be an array of strings. Will be in location, character, weapon order.
+def getCaseFile(roomCode):
+    with conn.cursor() as cur:
+        query = "SELECT case_file FROM game_session WHERE session_id = %s"
 
-# TODO: add functionality to retrieve case file from database (for now the database only has placeholder values)
-def getCaseFile(gameID):
-    #This can be a join or something
-    with psycopg.connect("dbname=Skeletal user=postgres password=1234") as conn:
-        with conn.cursor() as cur:
-            #Returns an array of card IDs which are integers. Will be in location, character, weapon order.
-            cur.execute("SELECT case_file FROM game_info WHERE game_id = %s", (gameID,))
-            caseFile = cur.fetchone()[0]
+        values = [roomCode]
+
+        result = ""
+        try:
+            cur.execute(query, values)
+            result = cur.fetchone()[0]
+        except(Exception, psycopg.Error) as error:
+            print("Error: ", error)
+
+        return result
 
 # Setters
-def setGameSessionDetails(roomCode):
+def setGameSessionDetails(roomCode,caseFile):
     with conn.cursor() as cur:
         now = datetime.datetime.now()
         curr_time = now.strftime('%Y-%m-%d %H:%M:%S')
         
         # placeholder for now - will hold case file indices (or IDs?)
-        case_file_index = [1 ,2 ,3]
+        caseFileCards = [ 
+            caseFile.room.cardName,
+            caseFile.suspect.cardName, 
+            caseFile.weapon.cardName
+        ]
 
         query = "INSERT INTO game_session(session_id, is_active, start_time, num_players, case_file) VALUES (%s, %s, %s, %s, %s);"
-        values = (roomCode, 't', curr_time, len(gameRooms[roomCode].players), case_file_index)
+        values = (roomCode, 't', curr_time, len(gameRooms[roomCode].players), caseFileCards)
         
         # Insert relevant game info into game_session table
         # note: we build the query string and values separately for safety reasons 
@@ -584,26 +628,24 @@ def setEndGameSessionDetails(roomCode):
         conn.commit()
         socketio.emit("message_from_server", {'text': 'Success'})
 
-def setPlayerInfo(roomCode):
+def setPlayerInfo(player, roomCode):
     # Posts player info to the database
     with conn.cursor() as cur:
         gameInstance = gameRooms[roomCode]
-        # session['username']
-        # Looping through playerDict to retrieve all players. This posts to the database several times
-        for player_id in gameInstance.playersDict.keys():
-            values = []
-            values.append(gameInstance.playersDict[player_id].sid)
-            values.append(gameInstance.playersDict[player_id].name)
-            values.append(gameInstance.playersDict[player_id].character)
-            values.append(roomCode)
 
-            query = "INSERT INTO players(player_id, player_name, character_name, session_id)VALUES(%s, %s, %s, %s)"
+        values = []
+        values.append(player.sid)
+        values.append(player.name)
+        values.append(player.character)
+        values.append(roomCode) 
 
-            try:
-                cur.execute(query, values)
-            except (Exception, psycopg.Error) as error:
-                print("Error: ", error)
-        
+        query = "INSERT INTO players(player_id, player_name, character_name, session_id)VALUES(%s, %s, %s, %s)"
+
+        try:
+            cur.execute(query, values)
+        except (Exception, psycopg.Error) as error:
+            print("Error: ", error)
+
         conn.commit()
  
 def setPlayerLocation(roomCode, player_id, location):

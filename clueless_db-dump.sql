@@ -64,7 +64,7 @@ CREATE TABLE public.game_session (
     start_time timestamp without time zone NOT NULL,
     end_time timestamp without time zone,
     num_players integer,
-    case_file integer[],
+    case_file character varying[],
     player_won character varying
 );
 
@@ -256,6 +256,7 @@ ALTER TABLE ONLY public.players ALTER COLUMN player_id SET DEFAULT nextval('publ
 --
 
 COPY public.game_session (session_id, is_active, start_time, end_time, num_players, case_file, player_won) FROM stdin;
+mi1tdz	t	2023-12-09 15:50:46	\N	1	{Study,"Prof. Plum",Wrench}	\N
 \.
 
 
@@ -307,6 +308,7 @@ PlumStart	f
 --
 
 COPY public.player_location_map (map_id, player_id, location_name, session_id) FROM stdin;
+243	B-J529FUN0qiT1BUAAAD	Hall1	mi1tdz
 \.
 
 
@@ -315,6 +317,7 @@ COPY public.player_location_map (map_id, player_id, location_name, session_id) F
 --
 
 COPY public.players (player_id, player_name, character_name, session_id) FROM stdin;
+B-J529FUN0qiT1BUAAAD	oroit	Miss Scarlet	mi1tdz
 \.
 
 
@@ -350,7 +353,7 @@ SELECT pg_catalog.setval('public.player_location_map_map_id_seq', 1025, true);
 -- Name: player_location_map_map_id_seq1; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.player_location_map_map_id_seq1', 128, true);
+SELECT pg_catalog.setval('public.player_location_map_map_id_seq1', 246, true);
 
 
 --
