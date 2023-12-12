@@ -406,6 +406,11 @@
                     openSuggestModal();
                 }
             });
+
+            socket.on('closemodal', function(data){
+                closeSuggestModal();
+            });
+
             
             //This is in case we want to make it so that the player can select any card
             //socket.on('modalcards', function(data){

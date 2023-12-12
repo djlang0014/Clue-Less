@@ -506,10 +506,9 @@ def getcards(data):
 def suggestionreply(data):
     roomCode = session['roomCode']
     player = gameRooms[roomCode].playersDict[session['username']]
-    suggestingPlayer = data['suggestingPlayerName']
-    suggestingPlayer = gameRooms[roomCode].playersDict[session[suggestingPlayer]]
-    instance = gameRooms[roomCode]
-    suggestingPlayerIndex = instance.players.index(suggestingPlayer)
+    suggestor = data['suggestingPlayerName']
+    suggestingPlayer = gameRooms[roomCode].playersDict[suggestor]
+
     
     name = player.name
 
@@ -524,13 +523,15 @@ def suggestionreply(data):
     
     #TODO: Need to get the SID of the suggesting player!
     #This is not the most graceful way to display this as it does not account for any other combinations
-    returnString = name + " showed: " + card
+    
 
     if card == None:
         returnString = name + " had no cards to show."
+    else:
+        returnString = name + " showed: " + card + "."
 
-
-    socketio.emit('message_from_server', {'text': returnString}, to=roomCode)
+    socketio.emit('message_from_server', {'text': returnString}, to=suggestingPlayer.sid)
+    socketio.emit('closemodal', to=roomCode)
 
     #TODO: Need to get the SID of the suggesting player!
     # the next lines are a test 
