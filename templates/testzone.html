@@ -170,6 +170,7 @@
             document.getElementById("end-turn-button").onclick = function() {
                 event.preventDefault();
                 socket.emit('end_turn');
+                document.getElementById('endTurnContainer').style.display = 'none';
             }
 
             document.getElementById("chat-submit").onclick = function() {
