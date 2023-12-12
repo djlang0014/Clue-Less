@@ -341,38 +341,19 @@ def end_turn():
     gameInstance = gameRooms[roomCode]
     currPlayer = gameInstance.playersDict[username]
     
-    # checks if the game is in its suggestion phase, if so move to that index
-    if (gameInstance.suggestionPhase) :
-        i = gameInstance.suggestionTurnIndex
-        next_player_index = (i + 1) % len(gameInstance.players)
-        nextPlayer = gameInstance.players[next_player_index]
+    # Process regular turn index
+    i = gameInstance.turnIndex
+    next_player_index = (i + 1) % len(gameInstance.players)
 
-        # If it gets back to the suggesting player, then that means no one was able to disprove.
-        if (nextPlayer.suggesting == True):
-            socketio.emit('message_from_server', {'text' : 'No one was able to disprove!'}, to=gameRooms[roomCode])
-            # TODO: Toggle off suggestion button?
+    # retrieve next player
+    nextPlayer = gameRooms[roomCode].players[next_player_index]
 
-            nextPlayer.suggesting = False
-            return
-        else :
-            socketio.emit("message_from_server", {'text':"It is your turn to disprove!"}, to=nextPlayer.sid)
-            socketio.emit('showsuggestmodal', {'player': gameInstance.players[next_player_index].name}, to=nextPlayer.sid)
-            gameInstance.suggestionTurnIndex = next_player_index
-            return       
-    else:
-        # Process regular turn index
-        i = gameInstance.turnIndex
-        next_player_index = (i + 1) % len(gameInstance.players)
+    for player in gameRooms[roomCode].players:
+        if (player.sid != nextPlayer.sid):
+            socketio.emit("turn_notification", {'text':"It is " + gameRooms[roomCode].players[next_player_index].name+"'s turn!"}, to=player.sid)
 
-        # retrieve next player
-        nextPlayer = gameRooms[roomCode].players[next_player_index]
-
-        for player in gameRooms[roomCode].players:
-            if (player.sid != nextPlayer.sid):
-                socketio.emit("turn_notification", {'text':"It is " +gameRooms[roomCode].players[next_player_index].name+"'s turn!"}, to=player.sid)
-
-        socketio.emit("your_turn", {'text':"It is your turn!"}, to=gameInstance.players[next_player_index].sid)
-        gameInstance.turnIndex = next_player_index    
+    socketio.emit("your_turn", {'text':"It is your turn!"}, to=gameInstance.players[next_player_index].sid)
+    gameInstance.turnIndex = next_player_index    
     
 
 @application.route('/testzone')
@@ -497,10 +478,10 @@ def suggestion(data):
     suggestionString = "" + suggestWeapon + ", " + suggestSuspect + ", " + suggestRoom + "."
 
     socketio.emit('message_from_server', {'text': name + ' suggested: ' + suggestionString}, to=roomCode)
-    socketio.emit('showsuggestmodal', {'player': name}, to=roomCode)
     
     # update index for suggestion turns 
-    next_player_index = (gameInstance.turnIndex + 1) % len(gameInstance.players)
+    i = gameInstance.turnIndex
+    next_player_index = (i + 1) % len(gameInstance.players)
 
     nextPlayer = gameInstance.players[next_player_index]
 
@@ -531,17 +512,13 @@ def getcards(data):
 def suggestionreply(data):
     roomCode = session['roomCode']
     player = gameRooms[roomCode].playersDict[session['username']]
-    suggestingPlayer = data['suggestingPlayerName']
-    suggestingPlayer = gameRooms[roomCode].playersDict[session[suggestingPlayer]]
-    instance = gameRooms[roomCode]
-    suggestingPlayerIndex = instance.players.index(suggestingPlayer)
+
+    disproved = False
     
     name = player.name
 
     card = data['weapon']
 
-    disproved = False
-    
     if card == None:
         card = data['suspect']
     
@@ -551,21 +528,14 @@ def suggestionreply(data):
     
     #TODO: Need to get the SID of the suggesting player!
     #This is not the most graceful way to display this as it does not account for any other combinations
-    returnString = name + " showed: " + card
-
     if card == None:
         returnString = name + " had no cards to show."
-
+    else:
+        returnString = name + " showed: " + card
 
     socketio.emit('message_from_server', {'text': returnString}, to=roomCode)
 
     #TODO: Need to get the SID of the suggesting player!
-    # the next lines are a test 
-    #previous_player_index = gameRooms[roomCode].turnIndex
-    #if (previous_player_index != 0):
-    #    --previous_player_index
-    #socketio.emit('message_from_server', {'text': name + ' showed ' + card + '!'}, to=gameRooms[roomCode].players[previous_player_index].sid)
-    
     previous_player_index = gameRooms[roomCode].turnIndex
     if (previous_player_index != 0):
         --previous_player_index
@@ -577,9 +547,30 @@ def suggestionreply(data):
         # notify all other players (without showing the card itself)
         socketio.emit('message_from_server', {'text': name + ' showed ' + '!'}, to=gameRooms[roomCode].players[previous_player_index].sid)
     else:
-        # TODO: functionality to move to the next player if they couldnt disprove!
-        socketio.emit('message_from_server', {'text': name + ' could not disprove!'}, to=gameRooms[roomCode])
-        socketio.emit('end_turn')
+        socketio.emit('message_from_server', {'text': name + ' could not disprove!'}, to=roomCode)
+
+        # checks if the game is in its suggestion phase, if so move to that index
+
+        gameInstance = gameRooms[roomCode]
+
+        if (gameInstance.suggestionPhase) :
+            i = gameInstance.suggestionTurnIndex
+            next_player_index = (i + 1) % len(gameInstance.players)
+            nextPlayer = gameInstance.players[next_player_index]
+
+            # If it gets back to the suggesting player, then that means no one was able to disprove.
+            if (nextPlayer.suggesting == True):
+                socketio.emit('message_from_server', {'text' : 'No one was able to disprove!'}, to=gameRooms[roomCode])
+
+                nextPlayer.suggesting = False
+                gameInstance.suggestionPhase = False
+                return
+            else :
+                socketio.emit("message_from_server", {'text':"It is your turn to disprove!"}, to=nextPlayer.sid)
+                socketio.emit('showsuggestmodal', {'player': gameInstance.players[next_player_index].name}, to=nextPlayer.sid)
+                gameInstance.suggestionTurnIndex = next_player_index
+                return      
+        
     #probably add a closemodal() or something to close all modals that are still open
 
 ## Server to Database:
