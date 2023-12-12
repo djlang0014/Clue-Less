@@ -339,8 +339,8 @@ def end_turn():
     roomCode = session['roomCode']
     
     gameInstance = gameRooms[roomCode]
-    player = gameInstance.playersDict[username]
-
+    currPlayer = gameInstance.playersDict[username]
+    
     # checks if the game is in its suggestion phase, if so move to that index
     if (gameInstance.suggestionPhase) :
         i = gameInstance.suggestionTurnIndex
@@ -358,18 +358,21 @@ def end_turn():
             socketio.emit("message_from_server", {'text':"It is your turn to disprove!"}, to=nextPlayer.sid)
             socketio.emit('showsuggestmodal', {'player': gameInstance.players[next_player_index].name}, to=nextPlayer.sid)
             gameInstance.suggestionTurnIndex = next_player_index
-            return
-            
+            return       
     else:
         # Process regular turn index
         i = gameInstance.turnIndex
         next_player_index = (i + 1) % len(gameInstance.players)
 
+        # retrieve next player
+        nextPlayer = gameRooms[roomCode].players[next_player_index]
+
+        for player in gameRooms[roomCode].players:
+            if (player.sid != nextPlayer.sid):
+                socketio.emit("turn_notification", {'text':"It is " +gameRooms[roomCode].players[next_player_index].name+"'s turn!"}, to=player.sid)
+
         socketio.emit("your_turn", {'text':"It is your turn!"}, to=gameInstance.players[next_player_index].sid)
-        gameInstance.turnIndex = next_player_index
-
-        socketio.emit("notify_other_players", {'text': gameInstance.players[next_player_index].name+"'s turn!", 'currPlayerSid': player.sid})
-
+        gameInstance.turnIndex = next_player_index    
     
 
 @application.route('/testzone')
@@ -578,17 +581,6 @@ def suggestionreply(data):
         socketio.emit('message_from_server', {'text': name + ' could not disprove!'}, to=gameRooms[roomCode])
         socketio.emit('end_turn')
     #probably add a closemodal() or something to close all modals that are still open
-
-# notifies all players besides current player
-@socketio.on('notify_other_players')
-def notifyotherplayers(data):
-    roomCode = session['roomCode']
-    currentPlayerSid = session['currPlayerSid']
-    index = ['playerIndex']
-
-    for player in gameRooms[roomCode].players:
-        if (player.sid != currentPlayerSid):
-            socketio.emit("turn_notification", {'text':"It is " +gameRooms[roomCode].players[index].name+"'s turn!"}, to=player.sid)
 
 ## Server to Database:
 # Request and update data according to gameplay
