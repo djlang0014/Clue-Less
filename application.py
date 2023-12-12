@@ -317,6 +317,7 @@ def init_game():
 @socketio.on('backdoor')
 def backdoor(data):
     roomCode = session['roomCode']
+    print(gameRooms[roomCode].caseFile.weapon)
     caseWeapon = gameRooms[roomCode].caseFile.weapon
     caseSuspect = gameRooms[roomCode].caseFile.suspect
     caseRoom = gameRooms[roomCode].caseFile.room
@@ -436,12 +437,17 @@ def accusation(data):
     player = gameInstance.playersDict[session['username']]
     name = player.name
 
-    sessionCaseFile = getCaseFile(roomCode)
+    sessionCaseFile = gameInstance.caseFile
     accusationCards = [accuseRoom, accuseSuspect, accuseWeapon]
 
     delim = ", "
 
-    if all(card in sessionCaseFile for card in accusationCards): 
+    sessionWeapon = sessionCaseFile.weapon.cardName
+    sessionSuspect = sessionCaseFile.suspect.cardName
+    sessionRoom = sessionCaseFile.room.cardName
+    print(accusationCards, sessionWeapon, sessionSuspect, sessionRoom)
+
+    if accuseWeapon == sessionWeapon and accuseSuspect == sessionSuspect and accuseRoom == sessionRoom:
         socketio.emit('message_from_server', {'text': name + ' wins!'}, to=roomCode)
         socketio.emit('end_game', {'text': player.sid})
         setEndGameSessionDetails(roomCode, player.sid)
@@ -450,7 +456,17 @@ def accusation(data):
         #            - update properties instead of removing from gameInstance
         gameInstance.players.remove(player)
         socketio.emit('message_from_server', {'text': name + ' was incorrect. They guessed: ' + delim.join(accusationCards)}, to=roomCode)
-    
+
+    """if all(card in sessionCaseFile for card in accusationCards): 
+        socketio.emit('message_from_server', {'text': name + ' wins!'}, to=roomCode)
+        socketio.emit('end_game', {'text': player.sid})
+        setEndGameSessionDetails(roomCode, player.sid)
+    else:
+        # TODO: player can't make any other moves again but can still stay in the game to disprove suggestions
+        #            - update properties instead of removing from gameInstance
+        gameInstance.players.remove(player)
+        socketio.emit('message_from_server', {'text': name + ' was incorrect. They guessed: ' + delim.join(accusationCards)}, to=roomCode)
+    """
 @socketio.on('suggestion')
 def suggestion(data):
     suggestWeapon = data['weapon']
