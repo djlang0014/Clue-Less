@@ -16,6 +16,9 @@
         var filelocation;
         var fileweapon;
         var playercards = [];
+        var suggestingPlayerName;
+        var suggestionCards = [];
+        var canSuggest = false;
 
         const locationnames = [
             "Study",
@@ -97,6 +100,7 @@
                 var location = selectedLocation ? selectedLocation.getAttribute('value') : null;
                 socket.emit('move_character', {'character':playercharacter, 'location':location});
                 deselectAllCards();
+                document.getElementById("move-button").disabled = true;
                 moveContainer.style.display = "none";
                 var boxes = document.getElementsByClassName('locationBox');
                 while(boxes[0]) {
@@ -119,6 +123,9 @@
                 if (weapon && character && location) {
                     // Emit the suggestion event to the server with the selected values
                     socket.emit('accusation', {'weapon': weapon, 'suspect': character, 'room': location});
+
+                    // Player should only accuse once
+                    document.getElementById("accuse-button").disabled = true;
                 } 
                 deselectAllCards();
             }
@@ -139,6 +146,7 @@
                     socket.emit('suggestion', {'weapon': weapon, 'suspect': character});
                 } 
                 deselectAllCards();
+                closeSuggestModal();
             }
 
             document.getElementById("modalsubmit").onclick = function(){
@@ -150,10 +158,16 @@
                 var weapon = selectedWeapon ? selectedWeapon.getAttribute('value') : null;
                 var character = selectedCharacter ? selectedCharacter.getAttribute('value') : null;
                 var location = selectedLocation ? selectedLocation.getAttribute('value') : null;
+                console.log(location)
+                
+                // TODO: player should only select one card to disprove with
                 console.log('here')
-                socket.emit('suggestionreply', {'weapon': weapon, 'suspect': character, 'room': location});
+                socket.emit('suggestionreply', {'weapon': weapon, 'suspect': character, 'room': location, 'suggestingPlayerName':suggestingPlayerName});
                 deselectAllCards();
                 closeSuggestModal();
+                
+                // Player should only suggest once - disable button afterwards
+                //document.getElementById("suggest-button").disabled = true
             }
 
             document.getElementById("end-turn-button").onclick = function() {
@@ -197,6 +211,11 @@
             });
 
             socket.on('showsuggestmodal', function(data){
+                suggestionCards.push(data['suggestSuspect']);
+                suggestionCards.push(data['suggestWeapon']);
+                suggestionCards.push(data['suggestRoom']);
+                suggestingPlayerName = data['player'];
+
                 if (playername != data['player']){
                     socket.emit('getcards', {'player':playername});
                 }  
@@ -226,6 +245,19 @@
                 filelocation = data['location'];
             });
 
+            socket.on('move_for_suggestion', function(data){
+                var character = data['character'];
+                var location = data['location'];
+                var newPosition = locations[location];
+                var movingImage = document.getElementById(character);
+                movingImage.style.top = newPosition.top + "px";
+                movingImage.style.left = newPosition.left + 15 + "px";
+                document.getElementById("chat").innerHTML += "Server: " + character + " was moved to the " + location + " due to a suggestion." + "<br />";
+                if (playername = data['username']){
+                    canSuggest = true;
+                }
+            });
+
             socket.on('movecharacter', function(data){
                 var character = data['character'];
                 var location = data['location'];
@@ -249,6 +281,15 @@
                 document.getElementById("end-button").disabled = false;
             });
 
+            socket.on('turn_notification', function(data) {
+                var text = data['text'];
+                document.getElementById("chat").innerHTML += "Server: " + text + "<br />";   
+                document.getElementById("move-button").disabled = true;
+                document.getElementById("suggest-button").disabled = true;
+                document.getElementById("accuse-button").disabled = true;
+                document.getElementById("end-button").disabled = true;
+            });
+            
             socket.on('available_locations', function(data){
                 i = 0;
                 console.log(data['locations'])
@@ -283,32 +324,41 @@
             //this is functional for making only the cards the player has appear
             //however, you are allowed to lie when counter suggesting so maybe we don't need this
 
-            //socket.on('modalcards', function(data){
-            //    //get by value
-            //    var modalCards = document.getElementById('modalContent').querySelectorAll('.card');
-            //    console.log(data['cards'])
-            //    console.log(modalCards)
-//
-            //    for (i = 0; i < modalCards.length; i++){
-            //        console.log(modalCards[i].getAttribute('value'));
-            //        value = modalCards[i].getAttribute('value');
-            //        console.log(value)
-            //        if (data['cards'].includes(value)){
-            //            document.getElementById('modalContent').querySelector('[value="' + value + '"]').hidden = false;
-            //            console.log('show!')
-            //        }
-            //        else{
-            //            document.getElementById('modalContent').querySelector('[value="' + value + '"]').hidden = true;
-            //        }
-            //        console.log(modalCards[i])
-            //    }
-            //    openSuggestModal();
-            //});
+            socket.on('modalcards', function(data){
+                //get by value
+                var modalCards = document.getElementById('modalContent').querySelectorAll('.card');
+                console.log(data['cards']);
+                console.log(modalCards);
+                console.log(suggestionCards);
+                noCards = true;
+
+                for (i = 0; i < modalCards.length; i++){
+                    console.log(modalCards[i].getAttribute('value'));
+                    value = modalCards[i].getAttribute('value');
+                    console.log(value)
+                    if (data['cards'].includes(value) && suggestionCards.includes(value)){
+                        document.getElementById('modalContent').querySelector('[value="' + value + '"]').hidden = false;
+                        console.log('show!')
+                        noCards = false;
+                    }
+                    else{
+                        document.getElementById('modalContent').querySelector('[value="' + value + '"]').hidden = true;
+                    }
+                    console.log(modalCards[i])
+                }
+                suggestionCards = [];
+                if (noCards){
+                    document.getElementById("chat").innerHTML += "Server: " + playername + ' is unable to disprove the suggestion.' + "<br />";
+                }
+                else{
+                    openSuggestModal();
+                }
+            });
             
             //This is in case we want to make it so that the player can select any card
-            socket.on('modalcards', function(data){
-                openSuggestModal();
-            });
+            //socket.on('modalcards', function(data){
+            //    openSuggestModal();
+            //});
 
         });
 
@@ -795,7 +845,7 @@
     <div class = "serverchat" id="serverchat">
         <div id="chat" style="text-align: justify; overflow:auto;padding:20px; position:fixed; width:45.5vh; height:80vh; border: 1px solid #000000;"></div>
         <!-- <textarea id="chat" style="width: 100%; height: 90%; font-size: 18px; font-family: monospace; margin-top: 10px;"></textarea> -->
-        <div style="position:fixed; top:83vh; width:100%; height: 20%; padding:20px; align-items:center;">
+        <div style="position:fixed; top:83vh; width:100%; height: 10%; padding:20px; align-items:center;">
             <input type="text" id="chat-text" style="width:18.5%">
             <input type="submit" value="Submit" id="chat-submit">
         </div>
