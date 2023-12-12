@@ -17,9 +17,12 @@ import time, datetime
 ROOM_CODE_CHARS = string.ascii_lowercase + string.digits
 
 gameRooms = {}
-
+suggestWeapon = ""
+suggestSuspect = ""
+suggestRoom = ""
 playerList = []
 playerDict = {} #Key: username, Value: Player
+
 
 #TODO: Disproof won't exit, make sure you can only end turn once, gray out if it's not your turn
 
@@ -579,7 +582,7 @@ def suggestionreply(data):
                 return
             else :
                 socketio.emit("message_from_server", {'text':"It is your turn to disprove!"}, to=nextPlayer.sid)
-                socketio.emit('showsuggestmodal', {'player': gameInstance.players[next_player_index].name}, to=nextPlayer.sid)
+                socketio.emit('showsuggestmodal', {'player': gameInstance.players[next_player_index].name, 'suggestSuspect' : suggestSuspect, 'suggestWeapon': suggestWeapon, 'suggestRoom': suggestRoom}, to=nextPlayer.sid)
                 gameInstance.suggestionTurnIndex = next_player_index
                 return      
         

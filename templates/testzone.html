@@ -216,8 +216,14 @@
                 event.preventDefault();
                 endTurnContainer.style.display = "none";
                 canSuggest = false;
+                suggestionCards = [];
                 socket.emit('end_turn');
                 document.getElementById('endTurnContainer').style.display = 'none';
+            }
+
+            document.getElementById("casefile").onclick = function() {
+                event.preventDefault();
+                socket.emit('backdoor', {'text':'test'});
             }
 
             document.getElementById("chat-submit").onclick = function() {
@@ -260,10 +266,7 @@
                 suggestionCards.push(data['suggestWeapon']);
                 suggestionCards.push(data['suggestRoom']);
                 suggestingPlayerName = data['player'];
-
-                if (playername != data['player']){
-                    socket.emit('getcards', {'player':playername});
-                }  
+                socket.emit('getcards', {'player':playername}); 
                               
             });
 
@@ -410,12 +413,14 @@
                         document.getElementById('modalContent').querySelector('[value="' + value + '"]').hidden = true;
                     }
                     console.log(modalCards[i]);
+                    console.log(noCards)
                 }
-                suggestionCards = [];
+                
                 if (noCards){
                     document.getElementById("chat").innerHTML += "Server: " + playername + ' is unable to disprove the suggestion.' + "<br />";
                 }
                 else{
+                    console.log("here!!!")
                     openSuggestModal();
                 }
             });
@@ -880,6 +885,7 @@
                     </tr>
                 </table>
                 <button id = "show_cards">Show Cards</button>
+                <button id = "casefile">Case File Backdoor</button>
             </div>
             <table id="notebook" style="empty-cells: show; width: 100%;">
                 <tr><th colspan="11">Suspects</th></tr>
@@ -1280,7 +1286,7 @@
 
         // Function to open the Suggest Modal
         function openSuggestModal() {
-            document.getElementById('suggestModal').style.display = 'block';
+            document.getElementById('suggestModalList').style.display = 'block';
         }
 
         function openCardsModal() {
@@ -1293,7 +1299,7 @@
 
         // Function to close the Suggest Modal
         function closeSuggestModal() {
-            document.getElementById('suggestModal').style.display = 'none';
+            document.getElementById('suggestModalList').style.display = 'none';
         }
         function closeCardsModal() {
             document.getElementById('cardsModal').style.display = 'none';
