@@ -1,4 +1,4 @@
 # store database credentials here so you don't have to hardcode :) 
-DB_NAME = 'clueless_db'
+DB_NAME = 'Clueless'
 DB_USERNAME = 'postgres'
-DB_PASSWORD = 'admin'
+DB_PASSWORD = '1234'
