@@ -150,7 +150,6 @@
 
                 var weapon = selectedWeapon ? selectedWeapon.getAttribute('value') : null;
                 var character = selectedCharacter ? selectedCharacter.getAttribute('value') : null;
- 
 
                 // Check if all necessary selections have been made
                 if (weapon && character) {
@@ -162,6 +161,9 @@
 
                 deselectAllCards();
                 closeSuggestModal();
+                
+                // Emit the suggestion event to the server with the selected values
+                socket.emit('suggestion', {'weapon': weapon, 'suspect': character});
             }
 
             document.getElementById("show_cards").onclick = function(){
@@ -215,7 +217,7 @@
                 endTurnContainer.style.display = "none";
                 canSuggest = false;
                 socket.emit('end_turn');
-                             
+                document.getElementById('endTurnContainer').style.display = 'none';
             }
 
             document.getElementById("chat-submit").onclick = function() {
@@ -333,6 +335,17 @@
                 document.getElementById("end-button").disabled = false;
             });
 
+            socket.on('disable_player_action', function(data) {
+                var text = data['text']
+                // match passed in info to the button to be disabled
+                // (move, suggest, accuse) 
+                // This is to be used during a player's turn
+
+                 // TODO: include other options like move or accuse
+                 document.getElementById("suggest-button").disabled = true
+                 // document.getElementById(text).disabled = true <- test if that works
+                
+            });
             socket.on('turn_notification', function(data) {
                 var text = data['text'];
                 document.getElementById("chat").innerHTML += "Server: " + text + "<br />";   
@@ -998,10 +1011,10 @@
         </form>
     </div>
 
-    <div id="suggestModal" class="modal">
+    <div id="suggestModalList" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeSuggestModal()">&times;</span>
-            <div id = "suggestModalList" class = "radio-list-suggest"></div><p>Can you disprove?</p>
+            <div id = "suggestModal" class = "radio-list-suggest"></div><p>Can you disprove?</p>
                 <form id = "modalContent">
                     <h3>Character, Room, and/or Weapon</h3>
                     <label>
