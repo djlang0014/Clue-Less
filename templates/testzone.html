@@ -44,6 +44,18 @@
             "Kitchen"
         ]
 
+        var rooms = [
+            "Study",
+            "Hall",
+            "Lounge",
+            "Library",
+            "Billiard",
+            "Dining",
+            "Conservatory",
+            "Ballroom",
+            "Kitchen"
+        ]
+
         var locations = {
             Study: {top:215, left: 225},
             Hall1: {top:215, left: 350},
@@ -139,12 +151,45 @@
                 var weapon = selectedWeapon ? selectedWeapon.getAttribute('value') : null;
                 var character = selectedCharacter ? selectedCharacter.getAttribute('value') : null;
 
+                // Check if all necessary selections have been made
+                if (weapon && character) {
+                    // Emit the suggestion event to the server with the selected values
+                    socket.emit('suggestion', {'weapon': weapon, 'suspect': character});
+                    showSuggestList();
+                } 
+
+
                 deselectAllCards();
                 closeSuggestModal();
                 
                 // Emit the suggestion event to the server with the selected values
                 socket.emit('suggestion', {'weapon': weapon, 'suspect': character});
             }
+
+            document.getElementById("show_cards").onclick = function(){
+                event.preventDefault();
+                socket.emit('getcardstoshow', {'player':playername});
+            }
+
+            socket.on('cardstoshow', function(data){
+                var cards = document.getElementById('modalCardsContent').querySelectorAll('.card');
+                console.log(data['cards']);
+                console.log(cards);
+                for (i = 0; i < cards.length; i++){
+                    console.log(cards[i].getAttribute('value'));
+                    value = cards[i].getAttribute('value');
+                    console.log(value)
+                    if (data['cards'].includes(value)){
+                        document.getElementById('modalCardsContent').querySelector('[value="' + value + '"]').hidden = false;
+                        console.log('show!')
+                    }
+                    else{
+                        document.getElementById('modalCardsContent').querySelector('[value="' + value + '"]').hidden = true;
+                    }
+                    console.log(cards[i])
+                }
+                openCardsModal();
+            });
 
             document.getElementById("modalsubmit").onclick = function(){
                 event.preventDefault();
@@ -169,6 +214,8 @@
 
             document.getElementById("end-turn-button").onclick = function() {
                 event.preventDefault();
+                endTurnContainer.style.display = "none";
+                canSuggest = false;
                 socket.emit('end_turn');
                 document.getElementById('endTurnContainer').style.display = 'none';
             }
@@ -202,7 +249,10 @@
             // Message recieved from server
             socket.on('message_from_server', function(data) {
                 var text = data['text'];
-                document.getElementById("chat").innerHTML += text + "<br />";   
+                var chat = document.getElementById("chat");
+                chat.innerHTML += text + "<br><br>";   
+                // Update scroll to show newest messages
+                chat.scrollTop = chat.scrollHeight;
             });
 
             socket.on('showsuggestmodal', function(data){
@@ -218,20 +268,20 @@
             });
 
             socket.on('playerinfo', function(data) {
-                console.log(data);
+                // console.log(data);
                 playername = data['playername'];
                 playercharacter = data['character'];
-                document.getElementById('playerinfooutput').innerText = "Player Name: " + playername + "\nPlayer Character: " + playercharacter;
+                document.getElementById('user-name').innerText = playername;
+                document.getElementById('player-character').innerText = playercharacter;
             });
 
-            socket.on('playercard', function(data){
-                if (x == 1){
-                    document.getElementById('cardoutput').innerText += "<br />";
-                    x = 0;
-                }
-                playercards.push(data['cardname']);
-                document.getElementById('cardoutput').innerText += data['cardtype'] +", " + data['cardname'] + "<br />";
-            });
+            // socket.on('playercard', function(data){
+            //     if (x == 1){
+            //         document.getElementById('cardoutput').innerText += "\n";
+            //         x = 0;
+            //     }
+            //     document.getElementById('cardoutput').innerText += data['cardtype'] +", " + data['cardname'] + "\n";
+            // });
 
             socket.on('casefilebackdoor', function(data){
                 event.preventDefault();
@@ -248,7 +298,7 @@
                 movingImage.style.top = newPosition.top + "px";
                 movingImage.style.left = newPosition.left + 15 + "px";
                 document.getElementById("chat").innerHTML += "Server: " + character + " was moved to the " + location + " due to a suggestion." + "<br />";
-                if (playername = data['username']){
+                if (playername == data['username']){
                     canSuggest = true;
                 }
             });
@@ -260,6 +310,10 @@
                 var movingImage = document.getElementById(character);
                 movingImage.style.top = newPosition.top + "px";
                 movingImage.style.left = newPosition.left + "px";
+                if (rooms.includes(location) && playername == data['username']){
+                    document.getElementById("suggest-button").disabled = false;
+                }
+                
             });
 
             socket.on('next_turn', function(data) {
@@ -271,7 +325,12 @@
                 var text = data['text'];
                 document.getElementById("chat").innerHTML += "Server: " + text + "<br />";   
                 document.getElementById("move-button").disabled = false;
-                document.getElementById("suggest-button").disabled = false;
+                if (canSuggest){
+                    document.getElementById("suggest-button").disabled = false;
+                }
+                else{
+                    document.getElementById("suggest-button").disabled = true;
+                }
                 document.getElementById("accuse-button").disabled = false;
                 document.getElementById("end-button").disabled = false;
             });
@@ -341,16 +400,16 @@
                 for (i = 0; i < modalCards.length; i++){
                     console.log(modalCards[i].getAttribute('value'));
                     value = modalCards[i].getAttribute('value');
-                    console.log(value)
+                    console.log(value);
                     if (data['cards'].includes(value) && suggestionCards.includes(value)){
                         document.getElementById('modalContent').querySelector('[value="' + value + '"]').hidden = false;
-                        console.log('show!')
+                        console.log('show!');
                         noCards = false;
                     }
                     else{
                         document.getElementById('modalContent').querySelector('[value="' + value + '"]').hidden = true;
                     }
-                    console.log(modalCards[i])
+                    console.log(modalCards[i]);
                 }
                 suggestionCards = [];
                 if (noCards){
@@ -379,6 +438,7 @@
             left: 52.5vw;
             width: 15vw;
             height: 15vh;
+            padding: 20px;
             display: none;
             grid-template-columns: 15vw 15vw 15vw;
             grid-template-rows: 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh;
@@ -391,6 +451,7 @@
             height: 15vh;
             left: 52.5vw;
             width: 15vw;
+            padding: 20px;
             display: none;
             grid-template-columns: 15vw 15vw;
             grid-template-rows: 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh;
@@ -401,15 +462,16 @@
             width: 15vw;
             height: 15vh;
             display: none;
+            padding: 20px;
             grid-template-columns: 15vw 15vw;
             grid-template-rows: 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh 15vh;
 
         }
         .endTurnContainer{
-            position: fixed;
+            position: relative;
             left:52.5vw;
-            width:30vw;
-            height: 90vh;
+            width:15vw;
+            height: 15vh;
             display: none;
         }
         .output {
@@ -802,34 +864,52 @@
         <div id = "cardoutput">Card Type, Card Name</div>
     </div> -->
     <div class = "notebook">
-        <table id="notebook" style="empty-cells: show; width: 100%">
-            <tr><th colspan="11">Suspects</th></tr>
-            <tr><th colspan="11">&nbsp;</th></tr>
-            <tr><th colspan="11">Weapons</th></tr>
-            <tr><th colspan="11">&nbsp;</th></tr>
-            <tr><th colspan="11">Rooms</th></tr>
-        </table>
+        <div style="height:17vh;">
+            &nbsp;
+        </div>
+        <div>
+            <div>
+                <table style="width:100%; border:none;">
+                    <tr style="border:none">
+                        <td style="width:50%; text-align:right; border:none;">Username:</td>
+                        <td id="user-name" style="border:none; text-align:left;"></td>
+                    </tr>
+                    <tr>
+                        <td style="width:50%; text-align:right; border:none;">Character:</td>
+                        <td id="player-character" style="border:none; text-align:left;"></td>
+                    </tr>
+                </table>
+                <button id = "show_cards">Show Cards</button>
+            </div>
+            <table id="notebook" style="empty-cells: show; width: 100%;">
+                <tr><th colspan="11">Suspects</th></tr>
+                <tr><th colspan="11">&nbsp;</th></tr>
+                <tr><th colspan="11">Weapons</th></tr>
+                <tr><th colspan="11">&nbsp;</th></tr>
+                <tr><th colspan="11">Rooms</th></tr>
+            </table>
+        </div>
     </div>
 
     <div class = "movebutton">
         <!--This will have to be changed to selecting the location to move to-->
-        <button id="move-button">Move</button>
+        <button id="move-button" disabled>Move</button>
     </div>
 
     <div class = "suggestbutton">
-        <button onclick = "showSuggestList()" id="suggest-button" >Suggest</button>
+        <button onclick = "showSuggestList()" id="suggest-button" disabled>Suggest</button>
     </div>
 
     <div class = "accusebutton">
-        <button onclick = "showAccuseList()" id="accuse-button" >Accuse</button>
+        <button onclick = "showAccuseList()" id="accuse-button" disabled>Accuse</button>
     </div>
 
     <div class = "endbutton">
-        <button onclick = "showEndTurn()" id="end-button" >End Turn</button>
+        <button onclick = "showEndTurn()" id="end-button" disabled>End Turn</button>
     </div>
 
     <div class = "serverchat" id="serverchat">
-        <div id="chat" style="text-align: justify; overflow:auto;padding:10px; position:fixed; width:45.5vh; height:80vh; border: 1px solid #000000;"></div>
+        <div id="chat" style="text-align: justify; overflow:auto;padding:20px; position:fixed; width:45.5vh; height:80vh; border: 1px solid #000000;"></div>
         <!-- <textarea id="chat" style="width: 100%; height: 90%; font-size: 18px; font-family: monospace; margin-top: 10px;"></textarea> -->
         <div style="position:fixed; top:83vh; width:100%; height: 10%; padding:20px; align-items:center;">
             <input type="text" id="chat-text" style="width:18.5%">
@@ -966,6 +1046,45 @@
                     </label>
                     
                     <input id="modalsubmit" type = "submit" value = "Submit">
+                </form>
+                
+            </div>
+        </div>
+    </div>
+
+    <div id="cardsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCardsModal()">&times;</span>
+            <div id = "suggestCardsList" class = "radio-list-suggest"></div><p>Your Cards</p>
+                <form id = "modalCardsContent">
+                    <h3>Character, Room, and Weapons</h3>
+                    <label>
+                        <div class="card" name="Character" id="profplum" value="Prof. Plum"></div>
+                        <div class="card" name="Character" id="colmustard" value="Col. Mustard"></div>
+                        <div class="card" name="Character" id="mrgreen" value="Mr. Green"></div>
+                        <div class="card" name="Character" id="missscarlet" value="Miss Scarlet"></div>
+                        <div class="card" name="Character" id="mrspeacock" value="Mrs. Peacock"></div>
+                        <div class="card" name="Character" id="mrswhite" value="Mrs. White"></div>
+                    </label>
+                    <label>
+                        <div class="card" name="Location" id="Ballroom" value="Ballroom"></div>
+                        <div class="card" name="Location" id="Hall" value="Hall"></div>
+                        <div class="card" name="Location" id="Conservatory" value="Conservatory"></div>
+                        <div class="card" name="Location" id="Dining" value="Dining"></div>
+                        <div class="card" name="Location" id="Billiard" value="Billiard"></div>
+                        <div class="card" name="Location" id="Kitchen" value="kitchen"></div>
+                        <div class="card" name="Location" id="Library" value="Library"></div>
+                        <div class="card" name="Location" id="Lounge" value="Lounge"></div>
+                        <div class="card" name="Location" id="Study" value="Study"></div>   
+                    </label>
+                        <div class="card" name="Weapon" id="candle" value="Candlestick"></div>
+                        <div class="card" name="Weapon" id="knife" value="Knife"></div>
+                        <div class="card" name="Weapon" id="pipe" value="Lead Pipe"></div>
+                        <div class="card" name="Weapon" id="revolver" value="Revolver"></div>
+                        <div class="card" name="Weapon" id="rope" value="Rope"></div>
+                        <div class="card" name="Weapon" id="wrench" value="Wrench"></div>
+                        
+                    </label>
                 </form>
                 
             </div>
@@ -1130,11 +1249,11 @@
                 cell.style.height = '22px';
         
                 cell.onclick = function() {
-                                    if (this.style.fontWeight == "bold") {
-                                        this.style.fontWeight = "normal";
+                                    if (this.style.fontWeight == "normal") {
+                                        this.style.fontWeight = 1000;
                                     }
                                     else {
-                                        this.style.fontWeight = "bold";
+                                        this.style.fontWeight = "normal";
                                     }                                  
                                 };
                                 
@@ -1164,6 +1283,10 @@
             document.getElementById('suggestModal').style.display = 'block';
         }
 
+        function openCardsModal() {
+            document.getElementById('cardsModal').style.display = 'block';
+        }
+
         span.onclick = function() {
             suggestModal.style.display = "none";
         }
@@ -1171,6 +1294,9 @@
         // Function to close the Suggest Modal
         function closeSuggestModal() {
             document.getElementById('suggestModal').style.display = 'none';
+        }
+        function closeCardsModal() {
+            document.getElementById('cardsModal').style.display = 'none';
         }
 
         // Event listener for the Suggest form submit button

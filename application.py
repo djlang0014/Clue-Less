@@ -382,6 +382,7 @@ def movecharacter(data):
     character = data['character']
     roomCode = session['roomCode']
     player = gameRooms[roomCode].playersDict[session['username']]
+    playername = player.name
     gameInstance = gameRooms[roomCode]
 
     # query database to retrieve player's current location
@@ -400,8 +401,9 @@ def movecharacter(data):
             # update location in object and database, then move character and send a message to all players
             gameInstance.setPlayerLocation(player.sid, newLocation)
             setPlayerLocation(roomCode, player.sid, newLocation)
-            socketio.emit('movecharacter', {'character': character, 'location': newLocation})
+            socketio.emit('movecharacter', {'character': character, 'location': newLocation, 'username': playername}, to=roomCode)
             socketio.emit('message_from_server', {'text' : player.name + ' has moved to ' + newLocation + '.'}, to=roomCode)
+            
 
 @socketio.on('get_available_locations')
 def get_available_locations(data):
@@ -452,6 +454,7 @@ def suggestion(data):
     suggestSuspect = data['suspect']
     username = session['username']
     roomCode = session['roomCode']
+    instance = gameRooms[roomCode]
 
     currPlayer = gameRooms[roomCode].playersDict[username]
     currPlayer.suggesting = True
@@ -470,8 +473,10 @@ def suggestion(data):
     
     name = currPlayer.name
 
-    # if suggestSuspect in characterPlayerDict:
-    #     socketio.emit('move_for_suggestion', {'character': suggestSuspect, 'location': suggestRoom, 'username': username}, to=roomCode)
+    if suggestSuspect in characterPlayerDict:
+        setPlayerLocation(roomCode, characterPlayerDict[suggestSuspect].sid, suggestRoom)
+
+    socketio.emit('move_for_suggestion', {'character': suggestSuspect, 'location': suggestRoom, 'username': username}, to=roomCode)
     
     suggestRoom = getPlayerCurrentLocation(currPlayer.sid, roomCode)
 
@@ -501,6 +506,19 @@ def getcards(data):
         playerCardNames.append(card.cardName)
     print("here")
     socketio.emit("modalcards", {'cards': playerCardNames}, to=player.sid)
+
+@socketio.on('getcardstoshow')
+def getcards(data):
+    roomCode = session['roomCode']
+    username = session['username']
+    player = gameRooms[roomCode].playersDict[username]
+    playerCards = player.getPlayerCards()
+    playerCardNames = []
+
+    for card in playerCards:
+        playerCardNames.append(card.cardName)
+    print("here")
+    socketio.emit("cardstoshow", {'cards': playerCardNames}, to=player.sid)    
 
 @socketio.on('suggestionreply')
 def suggestionreply(data):

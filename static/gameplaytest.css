@@ -169,6 +169,21 @@ body {
     left: 73.75vw;
 }
 
+.submitbutton{
+    display: grid;
+    background-color: black;
+    width: 21.25vw;
+    height: 7.8vh;
+    position: fixed;
+    bottom: 10vh;
+    color: white;
+    font-size: 2.5vh;
+    font-family: 'Courier New';
+    font-weight: 700;
+    text-align: center;
+    right: 26.25vw;
+}
+
 .notebook {
     width: 21.25vw;
     left: 52.5vw;
@@ -179,9 +194,9 @@ body {
     position: fixed;
     color: black;
     font-family: 'Courier New';
-    display: flex;
+    /* display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: center; */
 }
 
 .serverchat{
@@ -189,6 +204,10 @@ body {
     left: 73.75vw;
     height:90vh;
     width: 23.75vw;
+    color: black;
+    font-size: 18px;
+    font-family: 'Courier New';
+    background-image: url('logos/notebook.png');
 }
 
 .characterinfo{
