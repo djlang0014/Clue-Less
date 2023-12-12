@@ -284,7 +284,7 @@ def init_game():
 
     player = gameRooms[roomCode].playersDict[username]
 
-    socketio.emit("playerinfo", {'playername': player.getPlayerName(), 'character': player.getPlayerCharacter()}, to=request.sid)
+    socketio.emit("playerinfo", {'playername': player.name, 'character': player.getPlayerCharacter()}, to=request.sid)
     playerCards = player.getPlayerCards()
 
     # post player information to the database
@@ -487,13 +487,7 @@ def suggestion(data):
 
     if (nextPlayer.suggesting == False):
         socketio.emit("message_from_server", {'text':"It is your turn to disprove!"}, to=nextPlayer.sid)
-        socketio.emit('showsuggestmodal', {'player': gameInstance.players[next_player_index].name}, to=nextPlayer.sid)
-    
-    # time.sleep(1)
-
-
-
-    socketio.emit('showsuggestmodal', {'player': name, 'suggestWeapon': suggestWeapon, 'suggestSuspect': suggestSuspect, 'suggestRoom': suggestRoom}, to=roomCode)
+        socketio.emit('showsuggestmodal', {'player': gameInstance.players[next_player_index].name, 'suggestSuspect' : suggestSuspect, 'suggestWeapon': suggestWeapon, 'suggestRoom': suggestRoom }, to=nextPlayer.sid)
 
 @socketio.on('getcards')
 def getcards(data):
